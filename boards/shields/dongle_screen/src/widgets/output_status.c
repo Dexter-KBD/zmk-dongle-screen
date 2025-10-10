@@ -33,6 +33,21 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
 // --------------------
+// 구조체 수정: 각 라벨 포인터 추가
+// --------------------
+struct zmk_widget_output_status {
+    lv_obj_t *obj;
+
+    lv_obj_t *usb_arrow;
+    lv_obj_t *usb_label;
+    lv_obj_t *ble_arrow;
+    lv_obj_t *ble_label;
+    lv_obj_t *ble_num_label;
+
+    sys_snode_t node;
+};
+
+// --------------------
 // 웹컬러(hex) -> LVGL 색상 변환
 // --------------------
 static lv_color_t lv_color_from_web(const char *hex)
@@ -197,7 +212,7 @@ int zmk_widget_output_status_init(struct zmk_widget_output_status *widget, lv_ob
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 240, 77);
 
-    // 초기 라벨 생성
+    // 초기 라벨 포인터 초기화
     widget->usb_arrow = NULL;
     widget->usb_label = NULL;
     widget->ble_arrow = NULL;
