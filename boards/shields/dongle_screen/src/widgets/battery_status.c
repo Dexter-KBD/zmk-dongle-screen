@@ -75,14 +75,30 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 
 static void draw_battery(lv_obj_t *canvas, uint8_t level, bool usb_present) {
     
-    if (level < 15)
-    {
-        lv_canvas_fill_bg(canvas, lv_color_hex(0xfb5e51), LV_OPA_COVER); //빨강
-    } else if (level <= 30) {
-        lv_canvas_fill_bg(canvas, lv_color_hex(0xffdb3c), LV_OPA_COVER); //노랑
-    } else {
-        lv_canvas_fill_bg(canvas, lv_color_hex(0x72de75), LV_OPA_COVER); //초록
-    }
+ if (state.usb_present) {
+    // 🔌 USB 연결(충전 중)
+    lv_canvas_fill_bg(canvas, lv_color_hex(0xb57cff), LV_OPA_COVER); // 보라색
+}
+else if (level < 1)
+{
+    // 🔵 배터리 0% (슬립)
+    lv_canvas_fill_bg(canvas, lv_color_hex(0x5f5ce7), LV_OPA_COVER); // 슬립파란색
+}
+else if (level <= 15)
+{
+    // 🔴 배터리 부족
+    lv_canvas_fill_bg(canvas, lv_color_hex(0xfb5e51), LV_OPA_COVER); // 빨강
+}
+else if (level <= 30)
+{
+    // 🟡 배터리 낮음
+    lv_canvas_fill_bg(canvas, lv_color_hex(0xffdb3c), LV_OPA_COVER); // 노랑
+}
+else
+{
+    // 🟢 배터리 정상
+    lv_canvas_fill_bg(canvas, lv_color_hex(0x72de75), LV_OPA_COVER); // 초록
+}
 
     
     lv_draw_rect_dsc_t rect_fill_dsc;
@@ -137,25 +153,37 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level, state.usb_present);
     
-    if (state.level > 0) {
-       lv_obj_set_style_text_color(label, lv_color_hex(0x72de75), 0); // 초록
-        lv_label_set_text_fmt(label, "%4u", state.level);
-    } else {
-        lv_obj_set_style_text_color(label, lv_color_hex(0xfb5e51), 0); // 빨강
-        lv_label_set_text(label, "X");
-    }
-
-    if (state.level < 15)
-    {
-        lv_obj_set_style_text_color(label, lv_color_hex(0xfb5e51), 0); // 빨강
-        lv_label_set_text(label, "X");
-    } else if (state.level <= 30) {
-        lv_obj_set_style_text_color(label, lv_color_hex(0xffdb3c), 0); // 노랑
-        lv_label_set_text_fmt(label, "%4u", state.level);
-    } else {
-        lv_obj_set_style_text_color(label, lv_color_hex(0x72de75), 0); // 초록
-        lv_label_set_text_fmt(label, "%4u", state.level);
-    }
+  
+  // 배터리 상태에 따라 색상 및 텍스트 설정
+if (state.usb_present) {
+    // 🔌 USB 연결(충전 중)
+    lv_obj_set_style_text_color(label, lv_color_hex(0xb57cff), 0); // 보라색
+    lv_label_set_text_fmt(label, "%4u⚡", state.level);
+}
+else if (state.level < 1)
+{
+    // 🔵 배터리 0% (슬립 또는 완전 방전)
+    lv_obj_set_style_text_color(label, lv_color_hex(0x5f5ce7), 0); // 슬립파란색
+    lv_label_set_text(label, "sleep");
+}
+else if (state.level <= 15)
+{
+    // 🔴 배터리 부족
+    lv_obj_set_style_text_color(label, lv_color_hex(0xfb5e51), 0); // 빨강
+    lv_label_set_text_fmt(label, "%4u", state.level);
+}
+else if (state.level <= 30)
+{
+    // 🟡 배터리 낮음
+    lv_obj_set_style_text_color(label, lv_color_hex(0xffdb3c), 0); // 노랑
+    lv_label_set_text_fmt(label, "%4u", state.level);
+}
+else
+{
+    // 🟢 배터리 정상
+    lv_obj_set_style_text_color(label, lv_color_hex(0x72de75), 0); // 초록
+    lv_label_set_text_fmt(label, "%4u", state.level);
+}
     
     
     
