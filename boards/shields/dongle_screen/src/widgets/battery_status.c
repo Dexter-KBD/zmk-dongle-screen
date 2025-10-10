@@ -138,22 +138,22 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     draw_battery(symbol, state.level, state.usb_present);
     
     if (state.level > 0) {
-        lv_obj_set_style_text_color(label, lv_color_white(), 0);
+       lv_obj_set_style_text_color(label, lv_color_hex(0x72de75), 0); // 초록
         lv_label_set_text_fmt(label, "%4u", state.level);
     } else {
-        lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_RED), 0);
+        lv_obj_set_style_text_color(label, lv_color_hex(0xfb5e51), 0); // 빨강
         lv_label_set_text(label, "X");
     }
 
-    if (state.level < 1)
+    if (state.level < 20)
     {
-        lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_RED), 0);
+        lv_obj_set_style_text_color(label, lv_color_hex(0xfb5e51), 0); // 빨강
         lv_label_set_text(label, "X");
-    } else if (state.level <= 10) {
-        lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_YELLOW), 0);
+    } else if (state.level <= 80) {
+        lv_obj_set_style_text_color(label, lv_color_hex(0xffdb3c), 0); // 노랑
         lv_label_set_text_fmt(label, "%4u", state.level);
     } else {
-        lv_obj_set_style_text_color(label, lv_color_white(), 0);
+        lv_obj_set_style_text_color(label, lv_color_hex(0x72de75), 0); // 초록
         lv_label_set_text_fmt(label, "%4u", state.level);
     }
     
