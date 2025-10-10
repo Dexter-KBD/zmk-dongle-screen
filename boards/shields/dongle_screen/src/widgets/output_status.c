@@ -22,8 +22,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
-lv_point_t selection_line_points[] = {{0, 0}, {13, 0}}; // will be replaced with lv_point_precise_t
-
 struct output_status_state
 {
     struct zmk_endpoint_instance selected_endpoint;
@@ -63,72 +61,60 @@ static struct output_status_state get_state(const zmk_event_t *_eh)
 // --------------------
 static void set_status_symbol(struct zmk_widget_output_status *widget, struct output_status_state state)
 {
-    const char *ble_color = "038eff"; // 기본 블루
-    const char *usb_color = "cfa1f7"; // 기본 라벤더
-    const char *usb_arrow_color = "cfa1f7";
-    const char *ble_arrow_color = "038eff";
+    // 텍스트 색상
+    lv_color_t usb_color = lv_color_from_web(state.usb_is_hid_ready ? "cfa1f7" : "ff0000"); // USB 텍스트
+    lv_color_t ble_color;
+    if (state.active_profile_connected)
+        ble_color = lv_color_from_web("00ff00"); // 초록
+    else if (state.active_profile_bonded)
+        ble_color = lv_color_from_web("0000ff"); // 파랑
+    else
+        ble_color = lv_color_from_web("038eff"); // 기본 블루
 
-    // USB 상태 색상
-    if (state.usb_is_hid_ready == 0) {
-        usb_color = "ff0000";       // USB 텍스트 빨강
+    // 화살표 색상 스타일 생성
+    lv_style_t usb_arrow_style;
+    lv_style_t ble_arrow_style;
+    lv_style_init(&usb_arrow_style);
+    lv_style_init(&ble_arrow_style);
+
+    if (state.selected_endpoint.transport == ZMK_TRANSPORT_USB) {
+        lv_style_set_text_color(&usb_arrow_style, lv_color_from_web("ff7504")); // 오렌지
+        lv_style_set_text_color(&ble_arrow_style, ble_color);
     } else {
-        usb_color = "cfa1f7";       // USB 텍스트 라벤더
+        lv_style_set_text_color(&usb_arrow_style, usb_color);
+        lv_style_set_text_color(&ble_arrow_style, lv_color_from_web("ff00ff")); // BLE 선택 시 화살표 핑크
     }
 
-    // BLE 상태 색상
-    if (state.active_profile_connected) {
-        ble_color = "00ff00";       // 초록
-    } else if (state.active_profile_bonded) {
-        ble_color = "0000ff";       // 파랑
-    } else {
-        ble_color = "038eff";       // 기본 블루
-    }
-
-    // 화살표 색상 결정
-    switch (state.selected_endpoint.transport) {
-        case ZMK_TRANSPORT_USB:
-            usb_arrow_color = "ff7504";   // USB 선택 시 화살표 색상 (오렌지)
-            ble_arrow_color = ble_color;  // 선택 안된 BLE 화살표 = 기본/상태색
-            break;
-        case ZMK_TRANSPORT_BLE:
-            ble_arrow_color = "ff00ff";   // BLE 선택 시 화살표 색상 예시 (핑크)
-            usb_arrow_color = usb_color;  // 선택 안된 USB 화살표 = 기본/상태색
-            break;
-    }
-
-    // transport 라벨 텍스트 생성 (recolor)
+    // transport 라벨 생성
     char transport_text[50] = {};
     switch (state.selected_endpoint.transport) {
         case ZMK_TRANSPORT_USB:
-            snprintf(transport_text, sizeof(transport_text),
-                     ">#%s# #%s USB#\n#%s# #%s BLE#",
-                     usb_arrow_color, usb_color, ble_arrow_color, ble_color);
+            snprintf(transport_text, sizeof(transport_text), "> USB\nBLE");
             break;
         case ZMK_TRANSPORT_BLE:
-            snprintf(transport_text, sizeof(transport_text),
-                     "#%s# #%s USB#\n>#%s# #%s BLE#",
-                     usb_arrow_color, usb_color, ble_arrow_color, ble_color);
+            snprintf(transport_text, sizeof(transport_text), "USB\n> BLE");
             break;
     }
 
-    lv_label_set_recolor(widget->transport_label, true);
-    lv_obj_set_style_text_align(widget->transport_label, LV_TEXT_ALIGN_RIGHT, 0);
     lv_label_set_text(widget->transport_label, transport_text);
+    lv_obj_add_style(widget->transport_label, &usb_arrow_style, LV_PART_MAIN);
+    lv_obj_add_style(widget->transport_label, &ble_arrow_style, LV_PART_MAIN);
+    lv_obj_set_style_text_align(widget->transport_label, LV_TEXT_ALIGN_RIGHT, 0);
 
     // BLE 프로파일 숫자 표시 + 색상
     char ble_text[12];
     snprintf(ble_text, sizeof(ble_text), "%d", state.active_profile_index + 1);
     lv_label_set_text(widget->ble_label, ble_text);
 
-    lv_color_t color;
-    if (state.active_profile_connected) {
-        color = lv_color_from_web("00ff00"); // 초록
-    } else if (state.active_profile_bonded) {
-        color = lv_color_from_web("0000ff"); // 파랑
-    } else {
-        color = lv_color_from_web("038eff"); // 기본 블루
-    }
-    lv_obj_set_style_text_color(widget->ble_label, color, 0);
+    lv_color_t ble_num_color;
+    if (state.active_profile_connected)
+        ble_num_color = lv_color_from_web("00ff00"); // 초록
+    else if (state.active_profile_bonded)
+        ble_num_color = lv_color_from_web("0000ff"); // 파랑
+    else
+        ble_num_color = lv_color_from_web("038eff"); // 기본 블루
+
+    lv_obj_set_style_text_color(widget->ble_label, ble_num_color, 0);
 }
 
 // --------------------
