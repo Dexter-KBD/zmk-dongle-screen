@@ -8,10 +8,6 @@
  * - 선택된 transport는 > 화살표로 강조
  * - 각 텍스트와 화살표 색상 적용 가능
  * - BLE 프로파일 숫자 표시 및 색상 적용
- *
- * 구현:
- * - transport_label 대신 USB/BLE 텍스트와 화살표를 별도 lv_label로 생성
- * - BLE 숫자도 별도 라벨로 스타일 적용
  */
 
 #include <zephyr/kernel.h>
@@ -31,21 +27,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <stdlib.h> // strtoul
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
-
-// --------------------
-// 구조체 수정: 각 라벨 포인터 추가
-// --------------------
-struct zmk_widget_output_status {
-    lv_obj_t *obj;
-
-    lv_obj_t *usb_arrow;
-    lv_obj_t *usb_label;
-    lv_obj_t *ble_arrow;
-    lv_obj_t *ble_label;
-    lv_obj_t *ble_num_label;
-
-    sys_snode_t node;
-};
 
 // --------------------
 // 웹컬러(hex) -> LVGL 색상 변환
@@ -92,14 +73,14 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
     // --------------------
     // USB/BLE 텍스트 색상 결정
     // --------------------
-    lv_color_t usb_color = lv_color_from_web(state.usb_is_hid_ready ? "cfa1f7" : "ff0000"); // USB 텍스트
+    lv_color_t usb_color = lv_color_from_web(state.usb_is_hid_ready ? "cfa1f7" : "ff0000");
     lv_color_t ble_color;
     if (state.active_profile_connected)
-        ble_color = lv_color_from_web("00ff00"); // 초록
+        ble_color = lv_color_from_web("00ff00");
     else if (state.active_profile_bonded)
-        ble_color = lv_color_from_web("0000ff"); // 파랑
+        ble_color = lv_color_from_web("0000ff");
     else
-        ble_color = lv_color_from_web("038eff"); // 기본 블루
+        ble_color = lv_color_from_web("038eff");
 
     // --------------------
     // 화살표 색상 결정
@@ -109,10 +90,10 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
     switch (state.selected_endpoint.transport)
     {
     case ZMK_TRANSPORT_USB:
-        usb_arrow_color = lv_color_from_web("ff7504"); // 선택된 USB 화살표 오렌지
+        usb_arrow_color = lv_color_from_web("ff7504"); // USB 선택 시 오렌지
         break;
     case ZMK_TRANSPORT_BLE:
-        ble_arrow_color = lv_color_from_web("ff00ff"); // 선택된 BLE 화살표 핑크
+        ble_arrow_color = lv_color_from_web("ff00ff"); // BLE 선택 시 핑크
         break;
     }
 
@@ -174,11 +155,11 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
 
     lv_color_t ble_num_color;
     if (state.active_profile_connected)
-        ble_num_color = lv_color_from_web("00ff00"); // 초록
+        ble_num_color = lv_color_from_web("00ff00");
     else if (state.active_profile_bonded)
-        ble_num_color = lv_color_from_web("0000ff"); // 파랑
+        ble_num_color = lv_color_from_web("0000ff");
     else
-        ble_num_color = lv_color_from_web("038eff"); // 기본 블루
+        ble_num_color = lv_color_from_web("038eff");
 
     lv_obj_set_style_text_color(widget->ble_num_label, ble_num_color, 0);
 }
