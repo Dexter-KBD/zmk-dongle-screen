@@ -40,10 +40,10 @@ static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
         snprintf(text, sizeof(text), "%s", state.label);
 
         lv_label_set_text(label, text);
-
+    }
          // 레이어별 색상 지정
  lv_color_t color;
-
+    
     switch (state.index)
     {
         case 0:
