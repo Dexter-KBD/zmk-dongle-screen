@@ -75,10 +75,10 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 
 static void draw_battery(lv_obj_t *canvas, uint8_t level, bool usb_present) {
     
-    if (level < 20)
+    if (level < 15)
     {
         lv_canvas_fill_bg(canvas, lv_color_hex(0xfb5e51), LV_OPA_COVER); //빨강
-    } else if (level <= 80) {
+    } else if (level <= 30) {
         lv_canvas_fill_bg(canvas, lv_color_hex(0xffdb3c), LV_OPA_COVER); //노랑
     } else {
         lv_canvas_fill_bg(canvas, lv_color_hex(0x72de75), LV_OPA_COVER); //초록
@@ -145,11 +145,11 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
         lv_label_set_text(label, "X");
     }
 
-    if (state.level < 20)
+    if (state.level < 15)
     {
         lv_obj_set_style_text_color(label, lv_color_hex(0xfb5e51), 0); // 빨강
         lv_label_set_text(label, "X");
-    } else if (state.level <= 80) {
+    } else if (state.level <= 30) {
         lv_obj_set_style_text_color(label, lv_color_hex(0xffdb3c), 0); // 노랑
         lv_label_set_text_fmt(label, "%4u", state.level);
     } else {
