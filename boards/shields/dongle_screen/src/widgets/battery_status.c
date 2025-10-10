@@ -76,7 +76,7 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 
 // 배터리 색상 결정용 공용 함수
 static lv_color_t battery_color(uint8_t level, bool usb_present) {
-    if (usb_present) return lv_color_hex(0xb57cff); // 🔌 USB 연결(충전 중)
+    if (usb_present) return lv_color_hex(0xb57cff); // 🔌 USB 충전 중 (현재 구현 안됨)
     if (level < 1) return lv_color_hex(0x5f5ce7);   // 🔵 슬립/완전 방전
     if (level <= 15) return lv_color_hex(0xfb5e51); // 🔴 배터리 부족
     if (level <= 30) return lv_color_hex(0xffdb3c); // 🟡 배터리 낮음
@@ -136,7 +136,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     // 배터리 레이블 색상/텍스트 설정
     if (state.usb_present) {
-        // 🔌 USB 연결(충전 중)
+        // 🔌  USB 충전 중 (현재 구현 안됨)
         lv_obj_set_style_text_color(label, lv_color_hex(0xb57cff), 0); // 보라색
         lv_label_set_text_fmt(label, "%4u⚡", state.level);
     } else if (state.level < 1) {
