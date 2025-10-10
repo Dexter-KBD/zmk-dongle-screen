@@ -13,7 +13,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/split/central.h>
 #include <zmk/display.h>
 #include <zmk/events/battery_state_changed.h>
+#include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/event_manager.h>
+#include <zmk/usb.h>
 
 #include "battery_status.h"
 #include "../brightness.h"
@@ -31,6 +33,7 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 struct battery_state {
     uint8_t source;      // 배터리 소스 (0=중앙, 1..=퍼리퍼럴)
     uint8_t level;       // 배터리 잔량 %
+    bool usb_present;    // USB 연결 여부 (동글에서는 항상 연결됨)
 };
 
 // 위젯 오브젝트 구조체
@@ -57,57 +60,41 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
     if (source >= (ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET)) {
         return false;
     }
-    
+
     int8_t previous_level = last_battery_levels[source];
     bool reconnecting = (previous_level < 1) && (new_level >= 1);
-    
+
     if (reconnecting) {
         LOG_INF("Peripheral %d reconnection: %d%% -> %d%% (was %s)", 
                 source, previous_level, new_level, 
                 previous_level == -1 ? "never seen" : "disconnected");
     }
-    
+
     return reconnecting;
 }
 
-// ----------------------------
-// 배터리 색상 결정용 함수 (1% 단위 그라데이션)
-// ----------------------------
+// 배터리 색상 계산 함수 (1% 단위 그라데이션, 1% 미만 슬립색 유지)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
-        // 슬립/0% 상태
-        return lv_color_hex(0x5f5ce7);
+        return lv_color_hex(0x5f5ce7);   // 🔵 슬립/완전 방전
     }
 
-    if (level <= 19) {
-        // 1~19% 빨강(0xfb5e51) -> 노랑(0xffdb3c) 그라데이션
-        uint8_t r_start = 0xfb, g_start = 0x5e, b_start = 0x51; // 빨강
-        uint8_t r_end   = 0xff, g_end   = 0xdb, b_end   = 0x3c; // 노랑
-        float t = (float)(level - 1) / (19 - 1); // 1~19%를 0~1로 정규화
-        uint8_t r = r_start + (r_end - r_start) * t;
-        uint8_t g = g_start + (g_end - g_start) * t;
-        uint8_t b = b_start + (b_end - b_start) * t;
+    if (level >= 90) {
+        return lv_color_hex(0x72de75);   // 🟢 90% 이상 초록
+    } else if (level >= 20) {
+        // 20~89% 사이에서 초록 → 노랑 그라데이션
+        // 초록 0x72DE75, 노랑 0xFFDB3C
+        uint8_t ratio = (level - 20) * 100 / (90 - 20); // 0~100
+        uint8_t r = 0xFF - ((0xFF - 0x72) * ratio / 100);
+        uint8_t g = 0xDB + ((0xDE - 0xDB) * ratio / 100);
+        uint8_t b = 0x3C + ((0x75 - 0x3C) * ratio / 100);
         return lv_color_make(r, g, b);
+    } else {
+        return lv_color_hex(0xFB5E51);   // 🔴 20% 미만 빨강
     }
-
-    if (level <= 89) {
-        // 20~89% 초록(0x72de75) -> 노랑(0xffdb3c) 그라데이션
-        uint8_t r_start = 0x72, g_start = 0xde, b_start = 0x75; // 초록
-        uint8_t r_end   = 0xff, g_end   = 0xdb, b_end   = 0x3c; // 노랑
-        float t = (float)(level - 20) / (89 - 20); // 20~89%를 0~1로 정규화
-        uint8_t r = r_start + (r_end - r_start) * t;
-        uint8_t g = g_start + (g_end - g_start) * t;
-        uint8_t b = b_start + (b_end - b_start) * t;
-        return lv_color_make(r, g, b);
-    }
-
-    // 90~100% 초록
-    return lv_color_hex(0x72de75);
 }
 
-// ----------------------------
 // 배터리 캔버스 그리기
-// ----------------------------
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
 
@@ -128,28 +115,36 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     }
 }
 
-// ----------------------------
 // 배터리 심볼 + 레이블 설정
-// ----------------------------
 static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.source >= ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET) return;
 
     bool reconnecting = is_peripheral_reconnecting(state.source, state.level);
     last_battery_levels[state.source] = state.level;
 
+    if (reconnecting) {
+#if CONFIG_DONGLE_SCREEN_IDLE_TIMEOUT_S > 0    
+        LOG_INF("Peripheral %d reconnected (battery: %d%%), requesting screen wake", 
+                state.source, state.level);
+        brightness_wake_screen_on_reconnect();
+#else 
+        LOG_INF("Peripheral %d reconnected (battery: %d%%)", 
+                state.source, state.level);
+#endif
+    }
+
     lv_obj_t *symbol = battery_objects[state.source].symbol;
     lv_obj_t *label = battery_objects[state.source].label;
 
     draw_battery(symbol, state.level);
 
-    // 텍스트 색상도 바 색과 동일
-    lv_color_t col = battery_color(state.level);
-    lv_obj_set_style_text_color(label, col, 0);
-
+    // 텍스트 색상/숫자 표시
     if (state.level < 1) {
+        lv_obj_set_style_text_color(label, lv_color_hex(0x5f5ce7), 0);
         lv_label_set_text(label, "sleep");
     } else {
-        lv_label_set_text_fmt(label, "%4u%%", state.level);
+        lv_obj_set_style_text_color(label, battery_color(state.level), 0);
+        lv_label_set_text_fmt(label, "%u", state.level); // 숫자만 표시
     }
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
@@ -158,9 +153,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     lv_obj_move_foreground(label);
 }
 
-// ----------------------------
 // 모든 위젯에 상태 업데이트
-// ----------------------------
 void battery_status_update_cb(struct battery_state state) {
     struct zmk_widget_dongle_battery_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { 
@@ -168,9 +161,7 @@ void battery_status_update_cb(struct battery_state state) {
     }
 }
 
-// ----------------------------
-// 퍼리퍼럴/중앙 배터리 이벤트 처리
-// ----------------------------
+// 퍼리퍼럴 배터리 이벤트 처리
 static struct battery_state peripheral_battery_status_get_state(const zmk_event_t *eh) {
     const struct zmk_peripheral_battery_state_changed *ev = as_zmk_peripheral_battery_state_changed(eh);
     return (struct battery_state){
@@ -179,6 +170,7 @@ static struct battery_state peripheral_battery_status_get_state(const zmk_event_
     };
 }
 
+// 중앙 배터리 이벤트 처리
 static struct battery_state central_battery_status_get_state(const zmk_event_t *eh) {
     const struct zmk_battery_state_changed *ev = as_zmk_battery_state_changed(eh);
     return (struct battery_state) {
@@ -187,6 +179,7 @@ static struct battery_state central_battery_status_get_state(const zmk_event_t *
     };
 }
 
+// 이벤트 기반 상태 가져오기
 static struct battery_state battery_status_get_state(const zmk_event_t *eh) { 
     if (as_zmk_peripheral_battery_state_changed(eh) != NULL) {
         return peripheral_battery_status_get_state(eh);
@@ -195,9 +188,7 @@ static struct battery_state battery_status_get_state(const zmk_event_t *eh) {
     }
 }
 
-// ----------------------------
 // 디스플레이 위젯 리스너 등록
-// ----------------------------
 ZMK_DISPLAY_WIDGET_LISTENER(widget_dongle_battery_status, struct battery_state,
                             battery_status_update_cb, battery_status_get_state)
 
@@ -209,9 +200,7 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 #endif
 #endif
 
-// ----------------------------
 // 위젯 초기화
-// ----------------------------
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 240, 40);
@@ -241,9 +230,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     return 0;
 }
 
-// ----------------------------
 // 다른 파일에서 접근 가능한 공개 함수
-// ----------------------------
 lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
     return widget->obj;
 }
