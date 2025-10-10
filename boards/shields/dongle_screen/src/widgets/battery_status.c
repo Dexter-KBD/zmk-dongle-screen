@@ -77,11 +77,11 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level, bool usb_present) {
     
     if (level < 20)
     {
-        lv_canvas_fill_bg(canvas, lv_color_hex(0xfb5e51), 0), LV_OPA_COVER); //빨강
+        lv_canvas_fill_bg(canvas, lv_color_hex(0xfb5e51), LV_OPA_COVER); //빨강
     } else if (level <= 80) {
         lv_canvas_fill_bg(canvas, lv_color_hex(0xffdb3c), LV_OPA_COVER); //노랑
     } else {
-        lv_canvas_fill_bg(canvas, llv_color_hex(0x72de75), 0), LV_OPA_COVER); //초록
+        lv_canvas_fill_bg(canvas, llv_color_hex(0x72de75), LV_OPA_COVER); //초록
     }
 
     
