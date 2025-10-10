@@ -45,8 +45,8 @@ static struct output_status_state get_state(const zmk_event_t *_eh)
 
 static void set_status_symbol(struct zmk_widget_output_status *widget, struct output_status_state state)
 {
-    const char *ble_color = "ffffff";
-    const char *usb_color = "ffffff";
+    const char *ble_color = "038eff";
+    const char *usb_color = "8ce885";
     char transport_text[50] = {};
     if (state.usb_is_hid_ready == 0)
     {
