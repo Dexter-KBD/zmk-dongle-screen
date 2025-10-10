@@ -7,6 +7,13 @@
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
+static lv_color_t mod_color(uint8_t mods) {
+    if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LALT | MOD_RALT)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LGUI | MOD_RGUI)) return lv_color_hex(0x0383e6);  // 윈도우 색
+    return lv_color_black(); // 기본
+
 static void update_mod_status(struct zmk_widget_mod_status *widget)
 {
     uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers;
@@ -41,6 +48,7 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
     }
 
     lv_label_set_text(widget->label, idx ? text : "");
+     lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
 }
 
 static void mod_status_timer_cb(struct k_timer *timer)
