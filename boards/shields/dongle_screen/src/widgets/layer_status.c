@@ -62,7 +62,7 @@ static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
              color = lv_color_hex(0xFFE082); // 크림 옐로우
             break;
         case 5:
-            color = lv_color_hex(0xF8BBD0); // 로즈 핑크
+            color = lv_color_hex(0xDCEDC1); // 연한 그린
             break;
         case 6:
             color = lv_color_hex(0xB3E5FC); // 하늘색
