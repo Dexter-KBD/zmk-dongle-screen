@@ -42,13 +42,44 @@ static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
         lv_label_set_text(label, text);
 
          // 레이어별 색상 지정
-    lv_color_t color;
-    switch (state.index) {
-        case 0: color = lv_color_hex(0x72DE75); break; // 기본: 초록
-        case 1: color = lv_color_hex(0xFFDB3C); break; // 레이어1: 노랑
-        case 2: color = lv_color_hex(0xFB5E51); break; // 레이어2: 빨강
-        default: color = lv_color_hex(0xFFFFFF); break; // 나머지: 흰색
+ lv_color_t color;
+
+    switch (state.index)
+    {
+        case 0:
+            color = lv_color_hex(0xA8E6CF); // 민트 (기본 레이어)
+            break;
+        case 1:
+            color = lv_color_hex(0xDCEDC1); // 연한 그린
+            break;
+        case 2:
+            color = lv_color_hex(0xFFD3B6); // 살구
+            break;
+        case 3:
+            color = lv_color_hex(0xFFAAA5); // 코랄 핑크
+            break;
+        case 4:
+            color = lv_color_hex(0xFFCCF9); // 라벤더 핑크
+            break;
+        case 5:
+            color = lv_color_hex(0xD1C4E9); // 연보라
+            break;
+        case 6:
+            color = lv_color_hex(0xB3E5FC); // 하늘색
+            break;
+        case 7:
+            color = lv_color_hex(0xF8BBD0); // 로즈 핑크
+            break;
+        case 8:
+            color = lv_color_hex(0xFFE082); // 크림 옐로우
+            break;
+        default:
+            color = lv_color_hex(0xFFFFFF); // 예외: 흰색
+            break;
     }
+
+    // 텍스트 색상 적용
+    lv_obj_set_style_text_color(label, color, 0);
 }
 
 static void layer_status_update_cb(struct layer_status_state state)
