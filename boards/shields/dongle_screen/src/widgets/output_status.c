@@ -54,7 +54,7 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
     }
     else
     {
-        usb_color = "ffffff";
+        usb_color = "8ce885";
     }
 
     if (state.active_profile_connected == 1)
@@ -67,7 +67,7 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
     }
     else
     {
-        ble_color = "ffffff";
+        ble_color = "038eff";
     }
 
     switch (state.selected_endpoint.transport)
