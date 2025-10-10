@@ -40,6 +40,14 @@ static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
         snprintf(text, sizeof(text), "%s", state.label);
 
         lv_label_set_text(label, text);
+
+         // 레이어별 색상 지정
+    lv_color_t color;
+    switch (state.index) {
+        case 0: color = lv_color_hex(0x72DE75); break; // 기본: 초록
+        case 1: color = lv_color_hex(0xFFDB3C); break; // 레이어1: 노랑
+        case 2: color = lv_color_hex(0xFB5E51); break; // 레이어2: 빨강
+        default: color = lv_color_hex(0xFFFFFF); break; // 나머지: 흰색
     }
 }
 
