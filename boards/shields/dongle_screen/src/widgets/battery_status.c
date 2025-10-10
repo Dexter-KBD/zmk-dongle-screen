@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/services/bas.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -33,7 +34,6 @@ static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 struct battery_state {
     uint8_t source;      // 배터리 소스 (0=중앙, 1..=퍼리퍼럴)
     uint8_t level;       // 배터리 잔량 %
-    bool usb_present;    // USB 연결 여부 (동글에서는 항상 연결됨)
 };
 
 // 위젯 오브젝트 구조체
@@ -60,38 +60,47 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
     if (source >= (ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET)) {
         return false;
     }
-
+    
     int8_t previous_level = last_battery_levels[source];
     bool reconnecting = (previous_level < 1) && (new_level >= 1);
-
+    
     if (reconnecting) {
         LOG_INF("Peripheral %d reconnection: %d%% -> %d%% (was %s)", 
                 source, previous_level, new_level, 
                 previous_level == -1 ? "never seen" : "disconnected");
     }
-
+    
     return reconnecting;
 }
 
-// 배터리 색상 계산 함수 (1% 단위 그라데이션, 1% 미만 슬립색 유지)
+// 배터리 색상 결정용 공용 함수 (슬립모드 0%, 1~90% 그라데이션)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5f5ce7);   // 🔵 슬립/완전 방전
+        // 🔵 슬립/완전 방전
+        return lv_color_hex(0x5F5CE7);
     }
 
-    if (level >= 90) {
-        return lv_color_hex(0x72de75);   // 🟢 90% 이상 초록
-    } else if (level >= 20) {
-        // 20~89% 사이에서 초록 → 노랑 그라데이션
-        // 초록 0x72DE75, 노랑 0xFFDB3C
-        uint8_t ratio = (level - 20) * 100 / (90 - 20); // 0~100
-        uint8_t r = 0xFF - ((0xFF - 0x72) * ratio / 100);
-        uint8_t g = 0xDB + ((0xDE - 0xDB) * ratio / 100);
-        uint8_t b = 0x3C + ((0x75 - 0x3C) * ratio / 100);
+    // 1~90%는 초록->빨강 그라데이션
+    if (level <= 90) {
+        uint8_t green_r = 0x72; // 114
+        uint8_t green_g = 0xDE; // 222
+        uint8_t green_b = 0x75; // 117
+
+        uint8_t red_r = 0xFF; // 255
+        uint8_t red_g = 0x00;
+        uint8_t red_b = 0x00;
+
+        float t = 1.0f - ((float)level / 90.0f);
+
+        uint8_t r = (uint8_t)(green_r + t * (red_r - green_r));
+        uint8_t g = (uint8_t)(green_g + t * (red_g - green_g));
+        uint8_t b = (uint8_t)(green_b + t * (red_b - green_b));
+
         return lv_color_make(r, g, b);
-    } else {
-        return lv_color_hex(0xFB5E51);   // 🔴 20% 미만 빨강
     }
+
+    // 91~100%는 초록색 유지
+    return lv_color_hex(0x72DE75);
 }
 
 // 배터리 캔버스 그리기
@@ -138,13 +147,13 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    // 텍스트 색상/숫자 표시
+    // 텍스트 색상 (그라데이션 적용)
+    lv_obj_set_style_text_color(label, battery_color(state.level), 0);
+
     if (state.level < 1) {
-        lv_obj_set_style_text_color(label, lv_color_hex(0x5f5ce7), 0);
         lv_label_set_text(label, "sleep");
     } else {
-        lv_obj_set_style_text_color(label, battery_color(state.level), 0);
-        lv_label_set_text_fmt(label, "%u", state.level); // 숫자만 표시
+        lv_label_set_text_fmt(label, "%u", state.level); // % 제거
     }
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
@@ -224,13 +233,15 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     }
 
     sys_slist_append(&widgets, &widget->node);
+
     init_peripheral_tracking();
+
     widget_dongle_battery_status_init();
 
     return 0;
 }
 
-// 다른 파일에서 접근 가능한 공개 함수
+// 공개 함수
 lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
     return widget->obj;
 }
