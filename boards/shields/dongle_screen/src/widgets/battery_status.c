@@ -75,7 +75,7 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 
 static void draw_battery(lv_obj_t *canvas, uint8_t level, bool usb_present) {
     
- if (state.usb_present) {
+ if (usb_present) {
     // 🔌 USB 연결(충전 중)
     lv_canvas_fill_bg(canvas, lv_color_hex(0xb57cff), LV_OPA_COVER); // 보라색
 }
@@ -155,7 +155,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     
   
   // 배터리 상태에 따라 색상 및 텍스트 설정
-if (state.usb_present) {
+if (usb_present) {
     // 🔌 USB 연결(충전 중)
     lv_obj_set_style_text_color(label, lv_color_hex(0xb57cff), 0); // 보라색
     lv_label_set_text_fmt(label, "%4u⚡", state.level);
