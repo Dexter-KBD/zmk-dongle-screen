@@ -45,8 +45,8 @@ static struct output_status_state get_state(const zmk_event_t *_eh)
 
 static void set_status_symbol(struct zmk_widget_output_status *widget, struct output_status_state state)
 {
-    const char *ble_color = "038eff";
-    const char *usb_color = "8ce885";
+    const char *ble_color = "038eff"; //윈도우 블루투스 색
+    const char *usb_color = "cfa1f7"; //라벤더
     char transport_text[50] = {};
     if (state.usb_is_hid_ready == 0)
     {
@@ -54,7 +54,7 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
     }
     else
     {
-        usb_color = "8ce885";
+        usb_color = "cfa1f7"; //라벤더
     }
 
     if (state.active_profile_connected == 1)
@@ -67,7 +67,7 @@ static void set_status_symbol(struct zmk_widget_output_status *widget, struct ou
     }
     else
     {
-        ble_color = "038eff";
+        ble_color = "038eff"; //윈도우 블루투스 색
     }
 
     switch (state.selected_endpoint.transport)
