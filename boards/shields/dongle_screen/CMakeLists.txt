@@ -13,6 +13,7 @@ if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/include)              # 현재 모듈 include
   zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/include)               # 현재 CMake dir include
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/zmk/app/include)               # ZMK 이벤트 헤더 포함
+  zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/src/fonts) 
 
   # 소스 파일
   zephyr_library_sources(src/brightness.c)
