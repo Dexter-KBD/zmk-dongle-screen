@@ -23,6 +23,19 @@ struct layer_status_state
     const char *label;
 };
 
+// LVGL 폰트 선언
+LV_FONT_DECLARE(TmoneyRound_40);       // 한글용 메인 폰트
+LV_FONT_DECLARE(lv_font_montserrat_40); // fallback 영어용 폰트
+
+// TmoneyRound_40를 메인으로 하고 Montserrat_40을 fallback으로 지정
+static lv_font_t layer_status_font_with_fallback = {
+    .get_glyph_dsc = TmoneyRound_40.get_glyph_dsc,
+    .get_glyph_bitmap = TmoneyRound_40.get_glyph_bitmap,
+    .line_height = TmoneyRound_40.line_height,
+    .base_line = TmoneyRound_40.base_line,
+    .fallback_font = &lv_font_montserrat_40 // 영어 글자는 여기서 처리
+};
+
 static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
 {
     if (state.label == NULL)
@@ -105,7 +118,8 @@ int zmk_widget_layer_status_init(struct zmk_widget_layer_status *widget, lv_obj_
 {
     widget->obj = lv_label_create(parent);
 
-    lv_obj_set_style_text_font(widget->obj, &lv_font_montserrat_40, 0);
+    // TmoneyRound_40를 메인, Montserrat_40을 fallback으로 적용
+    lv_obj_set_style_text_font(widget->obj, &layer_status_font_with_fallback, 0);
 
     sys_slist_append(&widgets, &widget->node);
 
