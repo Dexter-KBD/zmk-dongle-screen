@@ -31,6 +31,9 @@ static struct zmk_widget_wpm_status wpm_status_widget;
 static struct zmk_widget_mod_status mod_widget;
 #endif
 
+// 신호 상태 위젯 추가
+#include "widgets/signal_status_widget.h"
+static struct zmk_widget_signal_status signal_widget;
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -76,6 +79,10 @@ lv_obj_t *zmk_display_status_screen()
     zmk_widget_mod_status_init(&mod_widget, screen);
     lv_obj_align(zmk_widget_mod_status_obj(&mod_widget), LV_ALIGN_CENTER, 0, 35);
 #endif
+
+// 신호 상태 위젯 초기화 및 배치
+zmk_widget_signal_status_init(&signal_widget, screen);
+lv_obj_align(zmk_widget_signal_status_obj(&signal_widget), LV_ALIGN_BOTTOM_RIGHT, -5, -5);
 
     return screen;
 }
