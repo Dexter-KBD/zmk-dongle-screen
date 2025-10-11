@@ -97,7 +97,7 @@ int zmk_widget_wpm_status_init(struct zmk_widget_wpm_status *widget, lv_obj_t *p
     // --------------------
     widget->wpm_label_title = lv_label_create(widget->obj);
     lv_label_set_text(widget->wpm_label_title, "WPM");
-    lv_obj_set_style_text_color(widget->wpm_label_title, lv_color_from_web("#FFFFFF"), 0); // 웹코드로 변경 가능
+    lv_obj_set_style_text_color(widget->wpm_label_title, lv_color_from_web("#F8BBD0"), 0); // 웹코드로 변경 가능
     lv_obj_set_style_text_align(widget->wpm_label_title, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_align(widget->wpm_label_title, LV_ALIGN_TOP_LEFT, 0, 0);
 
