@@ -8,15 +8,27 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
+#include <zephyr/kernel.h>
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
-#include <zmk/events/signal_state_changed.h> // 신호 이벤트 가정
+#include <zmk/events/signal_state_changed.h> // 이벤트 구조체 정의 필요
 
 #include <fonts.h>
 #include <stdlib.h> // strtoul
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
+// --------------------
+// 이벤트 구조체 정의 (가정)
+// --------------------
+struct zmk_signal_state_changed {
+    int rssi;       // dBm
+    int frequency;  // Hz
+};
+
+// --------------------
+// 위젯 상태 구조체
+// --------------------
 struct signal_status_state {
     int rssi;       // dBm
     int frequency;  // Hz
@@ -94,7 +106,6 @@ int zmk_widget_signal_status_init(struct zmk_widget_signal_status *widget, lv_ob
 
     sys_slist_append(&widgets, &widget->node);
 
-    widget_signal_status_init();
     return 0;
 }
 
