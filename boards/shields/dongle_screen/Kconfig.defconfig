@@ -210,11 +210,6 @@ config DONGLE_SCREEN_BRIGHTNESS_MODIFIER
     help
       The modifier to start the dongle with. Useful if you found a modifier comfortable for you. Espacially for ambient light. Otherwise no need to change.
 
-config DONGLE_SCREEN_SIGNAL_ACTIVE
-    bool "Enable Signal Status Widget"
-    default y
-    help
-      If enabled, the Signal Status Widget will be shown on the dongle screen.
 
 config DONGLE_SCREEN_SYSTEM_ICON
     int "The icon to display when the 'LGUI'/'RGUI' is pressed. (0: macOS, 1: Linux, 2: Windows)"
