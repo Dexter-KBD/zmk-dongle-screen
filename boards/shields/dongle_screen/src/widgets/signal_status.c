@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-#include <stdlib.h>  // strtoul
+#include <stdlib.h> // strtoul
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -24,7 +24,7 @@ static lv_color_t lv_color_from_web(const char *hex) {
 }
 
 // --------------------
-// 위젯 업데이트 (더미 값)
+// 위젯 업데이트
 // --------------------
 static void set_signal(struct zmk_widget_signal_status *widget, int rssi, int frequency) {
     char buf[32];
@@ -45,6 +45,16 @@ static void set_signal(struct zmk_widget_signal_status *widget, int rssi, int fr
 }
 
 // --------------------
+// 이벤트 상태 가져오기
+// --------------------
+static void signal_status_update_cb(struct zmk_signal_state_changed state) {
+    struct zmk_widget_signal_status *widget;
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        set_signal(widget, state.rssi, state.frequency);
+    }
+}
+
+// --------------------
 // 위젯 초기화
 // --------------------
 int zmk_widget_signal_status_init(struct zmk_widget_signal_status *widget, lv_obj_t *parent) {
@@ -56,8 +66,7 @@ int zmk_widget_signal_status_init(struct zmk_widget_signal_status *widget, lv_ob
 
     sys_slist_append(&widgets, &widget->node);
 
-    // 초기 더미 데이터 표시
-    set_signal(widget, -70, 2400);
+    // 더 이상 초기 더미값 표시하지 않음
 
     return 0;
 }
@@ -68,3 +77,10 @@ int zmk_widget_signal_status_init(struct zmk_widget_signal_status *widget, lv_ob
 lv_obj_t *zmk_widget_signal_status_obj(struct zmk_widget_signal_status *widget) {
     return widget->obj;
 }
+
+// --------------------
+// ZMK 이벤트 리스너 등록
+// --------------------
+ZMK_DISPLAY_WIDGET_LISTENER(widget_signal_status, struct zmk_signal_state_changed,
+                            signal_status_update_cb, NULL)
+ZMK_SUBSCRIPTION(widget_signal_status, zmk_signal_state_changed);
