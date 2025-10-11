@@ -31,10 +31,6 @@ static struct zmk_widget_wpm_status wpm_status_widget;
 static struct zmk_widget_mod_status mod_widget;
 #endif
 
-#if CONFIG_DONGLE_SCREEN_SIGNAL_ACTIVE
-#include "widgets/signal_status.h"
-static struct zmk_widget_signal_status signal_status_widget;
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
