@@ -17,7 +17,7 @@ if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)                     # Zephyr 드라이버
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/include)                # 프로젝트 루트 include
   zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/include)       # 현재 모듈 include
-  zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/include)        # 현재 CMake 디렉토리 include
+  zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/include)        # 현재 CMake 디렉토리 include (fonts.h 포함)
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/zmk/app/include)        # ZMK 이벤트 헤더 포함
 
   # --------------------
