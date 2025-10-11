@@ -108,7 +108,7 @@ int zmk_widget_wpm_status_init(struct zmk_widget_wpm_status *widget, lv_obj_t *p
     widget->wpm_label_value = lv_label_create(widget->obj);
     lv_label_set_text(widget->wpm_label_value, "0"); // 초기값
     lv_obj_set_style_text_align(widget->wpm_label_value, LV_TEXT_ALIGN_LEFT, 0);
-    lv_obj_set_style_text_line_space(widget->wpm_label_value, 6, 0); // 줄 간격
+    lv_obj_set_style_text_line_space(widget->wpm_label_value, 20, 0); // 줄 간격
     lv_obj_align(widget->wpm_label_value, LV_ALIGN_TOP_LEFT, 0, 20); // 아래쪽으로 배치
 
     sys_slist_append(&widgets, &widget->node);
