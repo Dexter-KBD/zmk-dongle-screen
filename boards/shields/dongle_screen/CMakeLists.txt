@@ -1,3 +1,4 @@
+# Dongle Shield 관련 CMake
 if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library()
 
@@ -11,9 +12,9 @@ if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/include)
   zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/include)
   zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/include)
-  zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/zmk/app/include)
-  zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/include) # <- fonts.h 포함
-  zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/include/fonts) # <- 여기 추가!
+  zephyr_library_include_directories(${ZEPHYR_CURRENT_CMAKE_DIR}/src/fonts)  # fonts.h
+  zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/zmk/app/src)       # ZMK 이벤트 헤더
+  zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/zmk/app/include/zmk/events) # <- 추가!
 
   # 소스 파일
   zephyr_library_sources(src/brightness.c)
