@@ -23,51 +23,69 @@ struct layer_status_state
     const char *label;
 };
 
-// LVGL 폰트 선언
-LV_FONT_DECLARE(TmoneyRound_40);        // 한글용 메인 폰트
-LV_FONT_DECLARE(lv_font_montserrat_40); // 영어용 fallback 폰트
-
 static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
 {
     if (state.label == NULL)
     {
         char text[7] = {};
+
         sprintf(text, "%i", state.index);
+
         lv_label_set_text(label, text);
     }
     else
     {
         char text[13] = {};
+
         snprintf(text, sizeof(text), "%s", state.label);
+
         lv_label_set_text(label, text);
     }
-
-    // 레이어별 색상 지정
-    lv_color_t color;
+         // 레이어별 색상 지정
+ lv_color_t color;
+    
     switch (state.index)
     {
-        case 0: color = lv_color_hex(0xA8E6CF); break; // 민트
-        case 1: color = lv_color_hex(0xDCEDC1); break; // 연한 그린
-        case 2: color = lv_color_hex(0xFFD3B6); break; // 살구
-        case 3: color = lv_color_hex(0xFFAAA5); break; // 코랄 핑크
-        case 4: color = lv_color_hex(0xFFE082); break; // 크림 옐로우
-        case 5: color = lv_color_hex(0xDCEDC1); break; // 연한 그린
-        case 6: color = lv_color_hex(0xB3E5FC); break; // 하늘색
-        case 7: color = lv_color_hex(0xF8BBD0); break; // 로즈 핑크
-        case 8: color = lv_color_hex(0xFFE082); break; // 크림 옐로우
-        default: color = lv_color_hex(0xFFFFFF); break;   // 예외: 흰색
+        case 0:
+            color = lv_color_hex(0xA8E6CF); // 민트 (기본 레이어)
+            break;
+        case 1:
+            color = lv_color_hex(0xDCEDC1); // 연한 그린
+            break;
+        case 2:
+            color = lv_color_hex(0xFFD3B6); // 살구
+            break;
+        case 3:
+            color = lv_color_hex(0xFFAAA5); // 코랄 핑크
+            break;
+        case 4:
+             color = lv_color_hex(0xFFE082); // 크림 옐로우
+            break;
+        case 5:
+            color = lv_color_hex(0xDCEDC1); // 연한 그린
+            break;
+        case 6:
+            color = lv_color_hex(0xB3E5FC); // 하늘색
+            break;
+        case 7:
+            color = lv_color_hex(0xF8BBD0); // 로즈 핑크
+            break;
+        case 8:
+            color = lv_color_hex(0xFFE082); // 크림 옐로우
+            break;
+        default:
+            color = lv_color_hex(0xFFFFFF); // 예외: 흰색
+            break;
     }
 
+    // 텍스트 색상 적용
     lv_obj_set_style_text_color(label, color, 0);
 }
 
 static void layer_status_update_cb(struct layer_status_state state)
 {
     struct zmk_widget_layer_status *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node)
-    {
-        set_layer_symbol(widget->obj, state);
-    }
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { set_layer_symbol(widget->obj, state); }
 }
 
 static struct layer_status_state layer_status_get_state(const zmk_event_t *eh)
@@ -78,8 +96,8 @@ static struct layer_status_state layer_status_get_state(const zmk_event_t *eh)
         .label = zmk_keymap_layer_name(index)};
 }
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state,
-                            layer_status_update_cb, layer_status_get_state)
+ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, layer_status_update_cb,
+                            layer_status_get_state)
 
 ZMK_SUBSCRIPTION(widget_layer_status, zmk_layer_state_changed);
 
@@ -87,13 +105,7 @@ int zmk_widget_layer_status_init(struct zmk_widget_layer_status *widget, lv_obj_
 {
     widget->obj = lv_label_create(parent);
 
-    // TmoneyRound_40를 메인 폰트로 적용
-    lv_obj_set_style_text_font(widget->obj, &TmoneyRound_40, 0);
-
-#if LVGL_VERSION_MAJOR >= 8
-    // 영어용 fallback 폰트 추가
-    lv_font_add_fallback(&TmoneyRound_40, &lv_font_montserrat_40);
-#endif
+    lv_obj_set_style_text_font(widget->obj, &lv_font_montserrat_40, 0);
 
     sys_slist_append(&widgets, &widget->node);
 
