@@ -8,31 +8,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-#include <zephyr/kernel.h>
-#include <zmk/display.h>
-#include <zmk/event_manager.h>
-#include <zmk/events/signal_state_changed.h> // 이벤트 구조체 정의 필요
-
-#include <fonts.h>
-#include <stdlib.h> // strtoul
+#include <stdlib.h>  // strtoul
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
-
-// --------------------
-// 이벤트 구조체 정의 (가정)
-// --------------------
-struct zmk_signal_state_changed {
-    int rssi;       // dBm
-    int frequency;  // Hz
-};
-
-// --------------------
-// 위젯 상태 구조체
-// --------------------
-struct signal_status_state {
-    int rssi;       // dBm
-    int frequency;  // Hz
-};
 
 // --------------------
 // 웹컬러 -> LVGL 색상 변환
@@ -46,29 +24,18 @@ static lv_color_t lv_color_from_web(const char *hex) {
 }
 
 // --------------------
-// 이벤트 상태 가져오기
+// 위젯 업데이트 (더미 값)
 // --------------------
-static struct signal_status_state get_state(const zmk_event_t *_eh) {
-    const struct zmk_signal_state_changed *ev = as_zmk_signal_state_changed(_eh);
-    return (struct signal_status_state){
-        .rssi = ev ? ev->rssi : 0,
-        .frequency = ev ? ev->frequency : 0
-    };
-}
-
-// --------------------
-// 위젯 업데이트
-// --------------------
-static void set_signal(struct zmk_widget_signal_status *widget, struct signal_status_state state) {
+static void set_signal(struct zmk_widget_signal_status *widget, int rssi, int frequency) {
     char buf[32];
-    snprintf(buf, sizeof(buf), "%i dBm %i Hz", state.rssi, state.frequency);
+    snprintf(buf, sizeof(buf), "%i dBm %i Hz", rssi, frequency);
     lv_label_set_text(widget->label, buf);
 
     // RSSI 기준 색상
     lv_color_t color;
-    if (state.rssi < -80) {
+    if (rssi < -80) {
         color = lv_color_from_web("#FF0000"); // 빨강
-    } else if (state.rssi < -60) {
+    } else if (rssi < -60) {
         color = lv_color_from_web("#FFFF00"); // 노랑
     } else {
         color = lv_color_from_web("#00FF00"); // 초록
@@ -76,23 +43,6 @@ static void set_signal(struct zmk_widget_signal_status *widget, struct signal_st
 
     lv_obj_set_style_text_color(widget->label, color, 0);
 }
-
-// --------------------
-// 위젯 업데이트 콜백
-// --------------------
-static void signal_status_update_cb(struct signal_status_state state) {
-    struct zmk_widget_signal_status *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
-        set_signal(widget, state);
-    }
-}
-
-// --------------------
-// ZMK 이벤트 리스너 등록
-// --------------------
-ZMK_DISPLAY_WIDGET_LISTENER(widget_signal_status, struct signal_status_state,
-                            signal_status_update_cb, get_state)
-ZMK_SUBSCRIPTION(widget_signal_status, zmk_signal_state_changed);
 
 // --------------------
 // 위젯 초기화
@@ -105,6 +55,9 @@ int zmk_widget_signal_status_init(struct zmk_widget_signal_status *widget, lv_ob
     lv_obj_align(widget->label, LV_ALIGN_TOP_LEFT, 0, 0);
 
     sys_slist_append(&widgets, &widget->node);
+
+    // 초기 더미 데이터 표시
+    set_signal(widget, -70, 2400);
 
     return 0;
 }
