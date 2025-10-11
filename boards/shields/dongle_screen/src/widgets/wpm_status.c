@@ -63,8 +63,8 @@ static void set_wpm(struct zmk_widget_wpm_status *widget, struct wpm_status_stat
     }
     lv_obj_set_style_text_color(widget->wpm_label_value, color, 0);
 
-    // 숫자 라벨 왼쪽 정렬
-    lv_label_set_align(widget->wpm_label_value, LV_TEXT_ALIGN_LEFT);
+    // 숫자 라벨 왼쪽 정렬 (LVGL v8 방식)
+    lv_obj_set_style_text_align(widget->wpm_label_value, LV_TEXT_ALIGN_LEFT, 0);
 }
 
 // --------------------
@@ -98,7 +98,7 @@ int zmk_widget_wpm_status_init(struct zmk_widget_wpm_status *widget, lv_obj_t *p
     widget->wpm_label_title = lv_label_create(widget->obj);
     lv_label_set_text(widget->wpm_label_title, "WPM");
     lv_obj_set_style_text_color(widget->wpm_label_title, lv_color_from_web("#FFFFFF"), 0); // 웹코드로 변경 가능
-    lv_label_set_align(widget->wpm_label_title, LV_TEXT_ALIGN_LEFT);
+    lv_obj_set_style_text_align(widget->wpm_label_title, LV_TEXT_ALIGN_LEFT, 0);
     lv_obj_align(widget->wpm_label_title, LV_ALIGN_TOP_LEFT, 0, 0);
 
     // --------------------
