@@ -54,7 +54,7 @@ static void set_wpm(struct zmk_widget_wpm_status *widget, struct wpm_status_stat
 
     lv_color_t color;
     if(state.wpm < 100) {
-        color = lv_color_from_web("#F8BBD0"); // 로즈 핑크
+        color = lv_color_from_web("#FF7504"); // 오렌지
     } else if(state.wpm < 150) {
         color = lv_color_from_web("#FFFF00"); // 노랑
     } else {
