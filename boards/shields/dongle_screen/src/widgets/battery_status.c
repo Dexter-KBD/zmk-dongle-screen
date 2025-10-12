@@ -83,12 +83,10 @@ static lv_color_t battery_color(uint8_t level) {
       // 배터리 잔량 단계별 색상
     if (level <= 10) {
         return lv_color_hex(0xFA0D0B); // 빨간색
-    } else if (level <= 20) {
-        return lv_color_hex(0xF98300); // 주황색
-    } else if (level <= 30) {
-        return lv_color_hex(0xF4F204); // 노란색
     } else if (level <= 80) {
-        return lv_color_hex(0xB0F702); // 연두색 (테스트 필요)
+        return lv_color_hex(0xF98300); // 주황색
+    } else if (level <= 90) {
+        return lv_color_hex(0xF4F204); // 노란색
     } else {
         return lv_color_hex(0x08FB10); // 초록색
     }
