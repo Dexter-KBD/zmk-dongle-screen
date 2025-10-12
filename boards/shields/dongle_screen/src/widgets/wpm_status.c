@@ -55,11 +55,11 @@ static void set_wpm(struct zmk_widget_wpm_status *widget, struct wpm_status_stat
     // 숫자 색상 (WPM 구간별)
     lv_color_t color;
     if (state.wpm < 100) {
-        color = lv_color_from_web("#FF7504"); // 오렌지
+        color = lv_color_from_web("#F98300"); // 오렌지
     } else if (state.wpm < 150) {
         color = lv_color_from_web("#FFFF00"); // 노랑
     } else {
-        color = lv_color_from_web("#00FF00"); // 초록
+        color = lv_color_from_web("#08FB10"); // 초록
     }
     lv_obj_set_style_text_color(widget->wpm_label_value, color, 0);
     lv_obj_set_style_text_align(widget->wpm_label_value, LV_TEXT_ALIGN_LEFT, 0);
