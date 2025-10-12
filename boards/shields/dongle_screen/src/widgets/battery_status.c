@@ -73,36 +73,26 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
     return reconnecting;
 }
 
-// 배터리 색상 결정용 공용 함수 (슬립모드 0%, 1~90% 그라데이션)
+// 배터리 색상 결정용 공용 함수 (5단계 구간)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
         // 🔵 슬립/완전 방전
         return lv_color_hex(0x5F5CE7);
     }
 
-    // 1~90%는 초록->빨강 그라데이션
-    if (level <= 90) {
-        uint8_t green_r = 0x72; // 114
-        uint8_t green_g = 0xDE; // 222
-        uint8_t green_b = 0x75; // 117
-
-        uint8_t red_r = 0xFF; // 255
-        uint8_t red_g = 0x00;
-        uint8_t red_b = 0x00;
-
-        float t = 1.0f - ((float)level / 90.0f);
-
-        uint8_t r = (uint8_t)(green_r + t * (red_r - green_r));
-        uint8_t g = (uint8_t)(green_g + t * (red_g - green_g));
-        uint8_t b = (uint8_t)(green_b + t * (red_b - green_b));
-
-        return lv_color_make(r, g, b);
+      // 배터리 잔량 단계별 색상
+    if (level <= 10) {
+        return lv_color_hex(0xFF0000); // 빨간색
+    } else if (level <= 20) {
+        return lv_color_hex(0xFF8000); // 주황색
+    } else if (level <= 30) {
+        return lv_color_hex(0xFFFF00); // 노란색
+    } else if (level <= 60) {
+        return lv_color_hex(0xADFF2F); // 연두색
+    } else {
+        return lv_color_hex(0x72DE75); // 초록색
     }
-
-    // 91~100%는 초록색 유지
-    return lv_color_hex(0x72DE75);
 }
-
 // 배터리 캔버스 그리기
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
@@ -147,7 +137,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    // 텍스트 색상 (그라데이션 적용)
+    // 텍스트 색상 (단계별 적용)
     lv_obj_set_style_text_color(label, battery_color(state.level), 0);
 
     if (state.level < 1) {
