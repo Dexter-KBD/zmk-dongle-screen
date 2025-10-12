@@ -1833,10 +1833,10 @@ static lv_font_fmt_txt_dsc_t font_dsc = {
     .cmaps = cmaps,
     .kern_dsc = NULL,
     .kern_scale = 0,
-    .cmap_num = 1,
+    .cmap_num = 2,
     .bpp = 4,
     .kern_classes = 0,
-    .bitmap_format = 1,
+    .bitmap_format = 0,
 #if LVGL_VERSION_MAJOR == 8
     .cache = &cache
 #endif
@@ -1858,18 +1858,18 @@ lv_font_t TmoneyRound_40 = {
 #endif
     .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
     .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/
-    .line_height = 39,          /*The maximum line height required by the font*/
-    .base_line = 6,             /*Baseline measured from the bottom of the line*/
+    .line_height = 38,          /*The maximum line height required by the font*/
+    .base_line = 5,             /*Baseline measured from the bottom of the line*/
 #if !(LVGL_VERSION_MAJOR == 6 && LVGL_VERSION_MINOR == 0)
     .subpx = LV_FONT_SUBPX_HOR,
 #endif
 #if LV_VERSION_CHECK(7, 4, 0) || LVGL_VERSION_MAJOR >= 8
-    .underline_position = -3,
+    .underline_position = -6,
     .underline_thickness = 2,
 #endif
     .dsc = &font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
 #if LV_VERSION_CHECK(8, 2, 0) || LVGL_VERSION_MAJOR >= 9
-    .fallback = &NerdFonts_Regular_40,
+    .fallback = &lv_font_montserrat_40,
 #endif
     .user_data = NULL,
 };
