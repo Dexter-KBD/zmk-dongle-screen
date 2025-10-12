@@ -16,7 +16,7 @@ if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library_sources(src/widgets/layer_status.c)
   zephyr_library_sources(src/widgets/wpm_status.c)
   zephyr_library_sources(src/widgets/mod_status.c)
-  zephyr_library_sources(src/signal_status_widget.c)  # RSSI + reception rate widget
+  zephyr_library_sources(src/widgets/signal_status_widget.c)  # RSSI + reception rate widget
   file(GLOB font_sources src/fonts/*.c)
   zephyr_library_sources(${font_sources})
 endif()
