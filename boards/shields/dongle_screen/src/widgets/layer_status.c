@@ -48,7 +48,7 @@ static void set_layer_symbol(lv_obj_t *label, struct layer_status_state state)
     switch (state.index)
 {
     case 0:
-        color = lv_color_hex(0xFFEAA7); // 밝은 옐로우 (원래 6번 색)
+        color = lv_color_hex(0xFFE082); // 크림 옐로우 
         break;
     case 1:
         color = lv_color_hex(0x0984E3); // 선명한 블루
