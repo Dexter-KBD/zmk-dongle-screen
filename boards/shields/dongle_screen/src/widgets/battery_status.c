@@ -86,7 +86,7 @@ static lv_color_t battery_color(uint8_t level) {
     } else if (level <= 80) {
         return lv_color_hex(0xF98300); // 주황색
     } else if (level <= 90) {
-        return lv_color_hex(0xF4F204); // 노란색
+        return lv_color_hex(0xFFFF00); // 노란색
     } else {
         return lv_color_hex(0x08FB10); // 초록색
     }
