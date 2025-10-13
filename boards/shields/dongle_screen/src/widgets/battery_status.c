@@ -59,7 +59,7 @@ static lv_color_t battery_color(uint8_t level) {
     else if (level <= 15) return lv_color_hex(0xFA0D0B);
     else if (level <= 30) return lv_color_hex(0xF98300);
     else if (level <= 40) return lv_color_hex(0xFFFF00);
-    else return lv_color_hex(0x00E800);
+    else return lv_color_hex(0x00E900);
 }
 
 static lv_color_t battery_color_dark(uint8_t level) {
@@ -140,6 +140,11 @@ void battery_status_update_cb(struct battery_state state) {
     }
 }
 
+// 빈 함수 정의로 링크 에러 방지
+void widget_dongle_battery_status_init(void) {
+    // 빈 함수, 기존 초기화 로직이 필요 없으면 그대로 둬도 됨
+}
+
 // 위젯 초기화
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
@@ -166,7 +171,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     sys_slist_append(&widgets, &widget->node);
     init_peripheral_tracking();
-    widget_dongle_battery_status_init();
+    widget_dongle_battery_status_init(); // 링크 에러 방지용 빈 함수 호출
 
     return 0;
 }
