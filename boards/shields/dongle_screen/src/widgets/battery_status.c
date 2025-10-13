@@ -82,7 +82,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 8;
+    rect_dsc.radius = 7; // ← 라디우스 변경
     lv_canvas_draw_rect(canvas, 2, 0, 102, 32, &rect_dsc);
 
     // 검정 공백
@@ -173,7 +173,8 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 // 위젯 초기화
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 260, 40); // 컨테이너 폭 260
+    lv_obj_set_size(widget->obj, 260, 40); // 컨테이너 폭
+    lv_obj_set_pos(widget->obj, 5, 0);     // 컨테이너 오른쪽으로 5픽셀 이동
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
@@ -182,10 +183,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *battery_label = lv_label_create(image_canvas);
 
         // 좌우 배터리 위치 조정
-        int x_offset;
-        if (i == 0) x_offset = -64; // 왼쪽 배터리
-        else x_offset = 64;          // 오른쪽 배터리
-
+        int x_offset = (i == 0) ? -64 : 64;
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0);
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
@@ -196,9 +194,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     }
 
     sys_slist_append(&widgets, &widget->node);
-
     init_peripheral_tracking();
-
     widget_dongle_battery_status_init();
 
     return 0;
