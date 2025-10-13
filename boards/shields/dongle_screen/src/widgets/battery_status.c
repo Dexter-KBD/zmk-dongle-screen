@@ -113,28 +113,33 @@ static lv_color_t battery_color_dark(uint8_t level) {
 }
 
 /**
- * @brief 배터리 캔버스 그리기 (높이 20픽셀)
+ * @brief 배터리 캔버스 그리기 (높이 20픽셀, radius 7)
  * - 전체 어두운 바 위에 밝은 잔량 표시
- * - radius = 7 적용
+ * - 좌우 margin 적용으로 양쪽 radius 균일하게
  */
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
+    const int margin = 2; // 좌우 여유 픽셀
+    const int inner_width = BATTERY_WIDTH - 2 * margin;
+
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_COVER); // 전체 배경 검정
 
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.radius = 7;      // radius 7 적용
+    rect_dsc.radius = 7;
     rect_dsc.border_width = 0;
 
     // 1. 배경 전체를 어두운 배터리 색으로 채우기
     rect_dsc.bg_color = battery_color_dark(level);
-    lv_canvas_draw_rect(canvas, 0, 0, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
+    lv_canvas_draw_rect(canvas, margin, 0, inner_width, BATTERY_HEIGHT, &rect_dsc);
 
     // 2. 밝은색 잔량 표시 덮기
     if (level > 0) {
+        int level_width = (level * inner_width) / BATTERY_WIDTH; // 비율 맞추기
         rect_dsc.bg_color = battery_color(level);
-        lv_canvas_draw_rect(canvas, 0, 0, level, BATTERY_HEIGHT, &rect_dsc);
+        lv_canvas_draw_rect(canvas, margin, 0, level_width, BATTERY_HEIGHT, &rect_dsc);
     }
 }
+
 
 // 배터리 심볼 + 레이블 설정
 static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
