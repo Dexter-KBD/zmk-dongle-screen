@@ -76,7 +76,7 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 // 배터리 색상 결정 (밝은 색)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립/완전 방전
+        return lv_color_hex(0x5F5CE7); // 슬립모드 방해금지 색
     } else if (level <= 15) {
         return lv_color_hex(0xFA0D0B); // 빨강
     } else if (level <= 30) {
@@ -91,7 +91,7 @@ static lv_color_t battery_color(uint8_t level) {
 // 배터리 색상 어두운 버전 (줄어든 부분)
 static lv_color_t battery_color_dark(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립/완전 방전 어두운
+        return lv_color_hex(0x5F5CE7); // 슬립(같은색으로 덮어씌움)
     } else if (level <= 15) {
         return lv_color_hex(0xB20908); // 빨강 어두운
     } else if (level <= 30) {
