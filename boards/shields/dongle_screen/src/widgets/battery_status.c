@@ -180,24 +180,27 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 // 위젯 초기화
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 240, 40); // 컨테이너 폭
 
-    // 화면 오른쪽 상단에 배치
-    // LV_ALIGN_TOP_RIGHT: 부모 화면 기준 오른쪽 상단
-    // x=0, y=0: 오른쪽 끝과 상단 끝에 맞춤
-    lv_obj_align(widget->obj, LV_ALIGN_TOP_RIGHT, 0, 0);
+    // 컨테이너 폭을 캔버스 수와 간격에 맞춰 자동 조정
+    int canvas_count = ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET;
+    int canvas_spacing = 10; // ⚠️ 캔버스 간 좌우 간격 (조절 가능)
+    int container_width = canvas_count * (BATTERY_WIDTH + canvas_spacing);
+    lv_obj_set_size(widget->obj, container_width, 40);
 
-    for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
+    // 화면 상단 중앙에 배치
+    lv_obj_align(widget->obj, LV_ALIGN_TOP_MID, 0, 0);
+
+    for (int i = 0; i < canvas_count; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         lv_obj_t *battery_label = lv_label_create(image_canvas);
 
-        // 내부 배터리 심볼 위치 조정
-        // LV_ALIGN_RIGHT_MID: 컨테이너 오른쪽 중앙 기준
-        // x_offset: 좌/우 심볼 간격 조정
-        int x_offset = (i == 0) ? -140 : -10; // 왼쪽/오른쪽 심볼 간격
-        lv_obj_align(image_canvas, LV_ALIGN_RIGHT_MID, x_offset, 0);
+        // ⚠️ 캔버스 배치 (컨테이너 안에서 좌우 균등 배치)
+        // i=0,1,... : 캔버스 인덱스
+        // canvas_spacing : 캔버스 간 간격 조절
+        int x_offset = i * (BATTERY_WIDTH + canvas_spacing);
+        lv_obj_align(image_canvas, LV_ALIGN_LEFT_MID, x_offset, 0);
 
         // 레이블은 캔버스 중앙에 배치
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
@@ -214,6 +217,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     return 0;
 }
+
 
 // 위젯 객체 반환
 lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
