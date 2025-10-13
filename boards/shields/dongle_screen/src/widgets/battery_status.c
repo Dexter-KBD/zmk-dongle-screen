@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include "battery_status.h"
 #include "../brightness.h"
 
-// 소스 오프셋 설정 (중앙장치 포함 여부)
+// 중앙 장치 포함 여부에 따른 소스 오프셋
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
     #define SOURCE_OFFSET 1
 #else
@@ -73,42 +73,65 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
     return reconnecting;
 }
 
-// 배터리 색상 결정용 공용 함수 (5단계 구간)
+// 배터리 색상 결정 (밝은 색)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
-        // 🔵 슬립/완전 방전
-        return lv_color_hex(0x5F5CE7);
-    }
-
-      // 배터리 잔량 단계별 색상
-    if (level <= 15) {
-        return lv_color_hex(0xFA0D0B); // 빨간색
+        return lv_color_hex(0x5F5CE7); // 슬립/완전 방전
+    } else if (level <= 15) {
+        return lv_color_hex(0xFA0D0B); // 빨강
     } else if (level <= 30) {
-        return lv_color_hex(0xF98300); // 주황색
+        return lv_color_hex(0xF98300); // 주황
     } else if (level <= 40) {
-        return lv_color_hex(0xFFFF00); // 노란색
+        return lv_color_hex(0xFFFF00); // 노랑
     } else {
-        return lv_color_hex(0x08FB10); // 초록색
+        return lv_color_hex(0x08FB10); // 초록
     }
 }
-// 배터리 캔버스 그리기
+
+// 배터리 색상 어두운 버전 (줄어든 부분)
+static lv_color_t battery_color_dark(uint8_t level) {
+    if (level < 1) {
+        return lv_color_hex(0x3F3EC0); // 슬립/완전 방전 어두운
+    } else if (level <= 15) {
+        return lv_color_hex(0xB20908); // 빨강 어두운
+    } else if (level <= 30) {
+        return lv_color_hex(0xC76A00); // 주황 어두운
+    } else if (level <= 40) {
+        return lv_color_hex(0xB5B500); // 노랑 어두운
+    } else {
+        return lv_color_hex(0x04910A); // 초록 어두운
+    }
+}
+
+/**
+ * @brief 배터리 캔버스 그리기
+ * - 전체 높이 5픽셀
+ * - 왼쪽 고정, 오른쪽 줄어듦
+ * - 잔량 영역 밝은 색
+ * - 잔량보다 오른쪽 어두운색
+ * - 오른쪽 어두운 영역 양 끝에 1픽셀 검정 → 라운드 효과
+ */
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
+    // 1. 전체 영역을 밝은 색으로 채움
     lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
 
-    lv_draw_rect_dsc_t rect_fill_dsc;
-    lv_draw_rect_dsc_init(&rect_fill_dsc);
-    rect_fill_dsc.bg_color = lv_color_black();
+    // 2. 오른쪽 남은 영역 어두운 색으로 덮기
+    if (level < 102) {
+        lv_draw_rect_dsc_t rect_fill_dsc;
+        lv_draw_rect_dsc_init(&rect_fill_dsc);
+        rect_fill_dsc.bg_color = battery_color_dark(level);
+        rect_fill_dsc.border_width = 0;
 
-    lv_canvas_set_px(canvas, 0, 0, lv_color_black());
-    lv_canvas_set_px(canvas, 0, 4, lv_color_black());
-    lv_canvas_set_px(canvas, 101, 0, lv_color_black());
-    lv_canvas_set_px(canvas, 101, 4, lv_color_black());
+        // x = level → 오른쪽 영역 시작
+        // width = 102 - level → 남은 폭
+        // height = 5 → 전체 높이
+        lv_canvas_draw_rect(canvas, level, 0, 102 - level, 5, &rect_fill_dsc);
 
-    if (level <= 99 && level > 0) {
-        lv_canvas_draw_rect(canvas, level, 1, 100 - level, 3, &rect_fill_dsc);
-        lv_canvas_set_px(canvas, 100, 1, lv_color_black());
-        lv_canvas_set_px(canvas, 100, 2, lv_color_black());
-        lv_canvas_set_px(canvas, 100, 3, lv_color_black());
+        // 오른쪽 영역 양 끝 위/아래 1픽셀 검정점 → 라운드 느낌
+        lv_canvas_set_px(canvas, level, 0, lv_color_black());   // 왼쪽 위
+        lv_canvas_set_px(canvas, level, 4, lv_color_black());   // 왼쪽 아래
+        lv_canvas_set_px(canvas, 101, 0, lv_color_black());     // 오른쪽 위
+        lv_canvas_set_px(canvas, 101, 4, lv_color_black());     // 오른쪽 아래
     }
 }
 
@@ -135,7 +158,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    // 텍스트 색상 (단계별 적용)
+    // 레이블 색상
     lv_obj_set_style_text_color(label, battery_color(state.level), 0);
 
     if (state.level < 1) {
@@ -150,7 +173,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     lv_obj_move_foreground(label);
 }
 
-// 모든 위젯에 상태 업데이트
+// 모든 위젯 상태 업데이트
 void battery_status_update_cb(struct battery_state state) {
     struct zmk_widget_dongle_battery_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { 
@@ -158,7 +181,7 @@ void battery_status_update_cb(struct battery_state state) {
     }
 }
 
-// 퍼리퍼럴 배터리 이벤트 처리
+// 이벤트 기반 상태 가져오기
 static struct battery_state peripheral_battery_status_get_state(const zmk_event_t *eh) {
     const struct zmk_peripheral_battery_state_changed *ev = as_zmk_peripheral_battery_state_changed(eh);
     return (struct battery_state){
@@ -167,7 +190,6 @@ static struct battery_state peripheral_battery_status_get_state(const zmk_event_
     };
 }
 
-// 중앙 배터리 이벤트 처리
 static struct battery_state central_battery_status_get_state(const zmk_event_t *eh) {
     const struct zmk_battery_state_changed *ev = as_zmk_battery_state_changed(eh);
     return (struct battery_state) {
@@ -176,7 +198,6 @@ static struct battery_state central_battery_status_get_state(const zmk_event_t *
     };
 }
 
-// 이벤트 기반 상태 가져오기
 static struct battery_state battery_status_get_state(const zmk_event_t *eh) { 
     if (as_zmk_peripheral_battery_state_changed(eh) != NULL) {
         return peripheral_battery_status_get_state(eh);
