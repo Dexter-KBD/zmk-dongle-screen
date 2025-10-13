@@ -122,7 +122,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
 
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.radius = 7;
+    rect_dsc.radius = 7;      // radius 7 적용
     rect_dsc.border_width = 0;
 
     // 1. 배경 전체를 어두운 배터리 색으로 채우기
@@ -229,11 +229,11 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH, BATTERY_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 캔버스 아래쪽 중앙에 배치
-        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8);
+        // 캔버스 아래쪽 중앙에 배치, 막대 위로 7픽셀 올리기
+        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8 - 7);
 
-        // 레이블을 캔버스 중앙에
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 0);
+        // 레이블을 캔버스 중앙에서 5픽셀 올리기
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -5);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
