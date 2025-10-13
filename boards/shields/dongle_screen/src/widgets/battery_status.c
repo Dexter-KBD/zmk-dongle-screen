@@ -76,7 +76,7 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 // 배터리 색상 결정 (밝은 색)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립모드 방해금지 색
+        return lv_color_hex(0x5F5CE7); // 슬립 방해금지모드 보라색
     } else if (level <= 15) {
         return lv_color_hex(0xFA0D0B); // 빨강
     } else if (level <= 30) {
@@ -91,7 +91,7 @@ static lv_color_t battery_color(uint8_t level) {
 // 배터리 색상 어두운 버전 (줄어든 부분)
 static lv_color_t battery_color_dark(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립(같은색으로 덮어씌움)
+        return lv_color_hex(0x5F5CE7); // 슬립 위랑 같은색 사용 (사실상 무효)
     } else if (level <= 15) {
         return lv_color_hex(0xB20908); // 빨강 어두운
     } else if (level <= 30) {
@@ -109,16 +109,26 @@ static lv_color_t battery_color_dark(uint8_t level) {
  * - 왼쪽 고정, 오른쪽 줄어듦
  * - 밝은색 영역 + 어두운색 영역
  * - 양 끝 위/아래 1픽셀 검정 → 라운드 효과
+ * - level == 0일 경우 별도 처리
  */
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
+    // 완전 방전(0%) 처리
+    if (level == 0) {
+        lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
+        // 양 끝 검정점 추가 (선택)
+        lv_canvas_set_px(canvas, 0, 0, lv_color_black());
+        lv_canvas_set_px(canvas, 0, 4, lv_color_black());
+        lv_canvas_set_px(canvas, 101, 0, lv_color_black());
+        lv_canvas_set_px(canvas, 101, 4, lv_color_black());
+        return;
+    }
+
     // 1. 전체 캔버스 밝은 색으로 초기화
     lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
 
     // 2. 밝은 색 왼쪽 끝 위/아래 1픽셀 검정 → 라운드 느낌
-    if (level > 0) {
-        lv_canvas_set_px(canvas, 0, 0, lv_color_black()); // 왼쪽 위
-        lv_canvas_set_px(canvas, 0, 4, lv_color_black()); // 왼쪽 아래
-    }
+    lv_canvas_set_px(canvas, 0, 0, lv_color_black()); // 왼쪽 위
+    lv_canvas_set_px(canvas, 0, 4, lv_color_black()); // 왼쪽 아래
 
     // 3. 잔량보다 오른쪽 영역을 어두운 색으로 덮기
     if (level < 102) {
@@ -212,4 +222,45 @@ ZMK_DISPLAY_WIDGET_LISTENER(widget_dongle_battery_status, struct battery_state,
 
 ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_peripheral_battery_state_changed);
 
-#if IS_ENABLED(CONFIG_Z
+#if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
+#if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
+#endif
+#endif
+
+// 위젯 초기화
+int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
+    widget->obj = lv_obj_create(parent);
+    lv_obj_set_size(widget->obj, 240, 40);
+
+    for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
+        lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
+        lv_obj_t *battery_label = lv_label_create(widget->obj);
+
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 5, LV_IMG_CF_TRUE_COLOR);
+
+        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -60 + (i * 120), -8);
+        lv_obj_align(battery_label, LV_ALIGN_TOP_MID, -60 + (i * 120), 0);
+
+        lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
+        
+        battery_objects[i] = (struct battery_object){
+            .symbol = image_canvas,
+            .label = battery_label,
+        };
+    }
+
+    sys_slist_append(&widgets, &widget->node);
+
+    init_peripheral_tracking();
+
+    widget_dongle_battery_status_init();
+
+    return 0;
+}
+
+// 공개 함수
+lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
+    return widget->obj;
+}
