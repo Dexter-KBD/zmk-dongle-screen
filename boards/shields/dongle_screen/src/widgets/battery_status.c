@@ -173,8 +173,8 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 // 위젯 초기화
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 250, 40); // 컨테이너 폭
-    lv_obj_set_pos(widget->obj, 30, 0);    // 컨테이너(전체 틀) 위치 (x,y)
+    lv_obj_set_size(widget->obj, 240, 40); // 컨테이너 폭
+    lv_obj_set_pos(widget->obj, 20, 0);    // 컨테이너(전체 틀) 위치 (x,y)
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
@@ -183,9 +183,9 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *battery_label = lv_label_create(image_canvas);
 
         // 좌우 배터리 위치 조정 (중심 간격 140픽셀)
-        int x_offset = (i == 0) ? -70 : 70;
+        int x_offset = (i == 0) ? -65 : 65;
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, 10, 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
