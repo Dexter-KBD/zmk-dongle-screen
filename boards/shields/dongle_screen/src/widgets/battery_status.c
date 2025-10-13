@@ -40,8 +40,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define BATTERY_TEXT_COLOR lv_color_hex(0x000000)
 #define BATTERY_X_OFFSET 135
 
-// 캔버스 높이 = 백화이트 높이 + 상단 여유 4픽셀
-#define CANVAS_HEIGHT (BACK_WHITE_HEIGHT + 4)
+#define CANVAS_HEIGHT (BACK_WHITE_HEIGHT + 4) // 상단 여유 4픽셀
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -55,7 +54,6 @@ struct battery_object {
     lv_obj_t *label;
 } battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
-// 캔버스 버퍼
 static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][(BATTERY_WIDTH + 8) * CANVAS_HEIGHT];
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
@@ -88,6 +86,14 @@ static lv_color_t battery_color(uint8_t level) {
     else return lv_color_hex(0x08FB10);
 }
 
+static lv_color_t battery_color_dark(uint8_t level) {
+    if (level < 1) return lv_color_hex(0x5F5CE7);
+    else if (level <= 15) return lv_color_hex(0xB20908);
+    else if (level <= 30) return lv_color_hex(0xC76A00);
+    else if (level <= 40) return lv_color_hex(0xB5B500);
+    else return lv_color_hex(0x04910A);
+}
+
 // -------------------- 배터리 그리기 --------------------
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     const int margin = 2;
@@ -99,34 +105,43 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
 
-    // 1. 흰색 바 (뒤쪽, 테두리 역할)
+    // 1. 흰색 바 (테두리, 가장 뒤)
     rect_dsc.radius = BACK_WHITE_RADIUS;
     rect_dsc.bg_color = lv_color_white();
     rect_dsc.border_width = 0;
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2 - margin,
-        4, // 상단 여유 4픽셀
+        4, // 상단 여유
         inner_width + 2*margin,
         BACK_WHITE_HEIGHT,
         &rect_dsc);
 
-    // 2. 검정 바 (흰색 바 위)
+    // 2. 검정 바 (흰색 바 위, 7픽셀 위로 이동)
     rect_dsc.radius = BACK_BLACK_RADIUS;
     rect_dsc.bg_color = lv_color_black();
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2,
-        4 + (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2 + 7, // 막대 아래로 7픽셀 이동
+        4 + 7 + (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2,
         inner_width,
         BACK_BLACK_HEIGHT,
         &rect_dsc);
 
-    // 3. 밝은색 배터리 잔량 표시
+    // 3. 어두운색 배터리 바 (검정 위, 5픽셀 위로)
     rect_dsc.radius = BATTERY_RADIUS;
+    rect_dsc.bg_color = battery_color_dark(level);
+    lv_canvas_draw_rect(canvas,
+        (canvas_width - inner_width)/2,
+        4 + 7 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 + 5,
+        inner_width,
+        BATTERY_HEIGHT,
+        &rect_dsc);
+
+    // 4. 밝은색 배터리 잔량 표시 (어두운색 위, 5픽셀 위)
     rect_dsc.bg_color = battery_color(level);
     int level_width = (level * inner_width) / 100;
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2,
-        4 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 + 7,
+        4 + 7 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 + 5,
         level_width,
         BATTERY_HEIGHT,
         &rect_dsc);
@@ -155,7 +170,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level); // % 제거
 
-    // 숫자 아래로 5픽셀 이동
+    // 숫자 5픽셀 아래
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
     lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
@@ -207,10 +222,9 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH + 8, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 캔버스 중앙 정렬, 막대 아래로 7픽셀 이동
-        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8 + 7);
-
-        // 숫자 레이블 5픽셀 아래
+        // 캔버스 중앙 정렬
+        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8);
+        // 숫자 5픽셀 아래
         lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 5);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
