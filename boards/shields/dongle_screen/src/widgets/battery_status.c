@@ -29,7 +29,13 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 #define BATTERY_HEIGHT 20
-#define BATTERY_WIDTH 102
+#define BATTERY_WIDTH 110
+
+// 숫자 색상을 쉽게 바꿀 수 있도록 헥스코드로 정의
+#define BATTERY_TEXT_COLOR lv_color_hex(0x000000) // 검정색, 필요시 변경 가능
+
+// 막대 간 간격 조정
+#define BATTERY_X_OFFSET 135 // 110 픽셀 막대 + 간격 25픽셀
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -153,7 +159,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    lv_obj_set_style_text_color(label, lv_color_white(), 0); // 숫자는 흰색
+    lv_obj_set_style_text_color(label, BATTERY_TEXT_COLOR, 0); // 숫자 색상 적용
 
     if (state.level < 1) {
         lv_label_set_text(label, "sleep");
@@ -224,10 +230,10 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH, BATTERY_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         // 캔버스 아래쪽 중앙에 배치
-        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -60 + (i * 120), -8);
+        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8);
 
         // 레이블을 캔버스 중앙에
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, -60 + (i * 120), 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
