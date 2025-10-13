@@ -43,7 +43,7 @@ struct battery_object {
 } battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
 // 캔버스 버퍼
-static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][102 * 5];
+static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][102 * 6]; // 높이 6픽셀
 
 // Peripheral reconnection tracking
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
@@ -76,7 +76,7 @@ static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
 // 배터리 색상 결정 (밝은 색)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립 방해금지모드 보라색
+        return lv_color_hex(0x5F5CE7); // 슬립/완전 방전
     } else if (level <= 15) {
         return lv_color_hex(0xFA0D0B); // 빨강
     } else if (level <= 30) {
@@ -91,7 +91,7 @@ static lv_color_t battery_color(uint8_t level) {
 // 배터리 색상 어두운 버전 (줄어든 부분)
 static lv_color_t battery_color_dark(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립 위랑 같은색 사용 (사실상 무효)
+        return lv_color_hex(0x3F3EC0); // 슬립/완전 방전 어두운
     } else if (level <= 15) {
         return lv_color_hex(0xB20908); // 빨강 어두운
     } else if (level <= 30) {
@@ -104,8 +104,7 @@ static lv_color_t battery_color_dark(uint8_t level) {
 }
 
 /**
- * @brief 배터리 캔버스 그리기
- * - 전체 높이 5픽셀
+ * @brief 배터리 캔버스 그리기 (높이 6픽셀)
  * - 왼쪽 고정, 오른쪽 줄어듦
  * - 밝은색 영역 + 어두운색 영역
  * - 양 끝 위/아래 1픽셀 검정 → 라운드 효과
@@ -115,11 +114,11 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     // 완전 방전(0%) 처리
     if (level == 0) {
         lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
-        // 양 끝 검정점 추가 (선택)
+        // 양 끝 검정점
         lv_canvas_set_px(canvas, 0, 0, lv_color_black());
-        lv_canvas_set_px(canvas, 0, 4, lv_color_black());
+        lv_canvas_set_px(canvas, 0, 5, lv_color_black());
         lv_canvas_set_px(canvas, 101, 0, lv_color_black());
-        lv_canvas_set_px(canvas, 101, 4, lv_color_black());
+        lv_canvas_set_px(canvas, 101, 5, lv_color_black());
         return;
     }
 
@@ -128,7 +127,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
 
     // 2. 밝은 색 왼쪽 끝 위/아래 1픽셀 검정 → 라운드 느낌
     lv_canvas_set_px(canvas, 0, 0, lv_color_black()); // 왼쪽 위
-    lv_canvas_set_px(canvas, 0, 4, lv_color_black()); // 왼쪽 아래
+    lv_canvas_set_px(canvas, 0, 5, lv_color_black()); // 왼쪽 아래
 
     // 3. 잔량보다 오른쪽 영역을 어두운 색으로 덮기
     if (level < 102) {
@@ -137,11 +136,11 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         rect_fill_dsc.bg_color = battery_color_dark(level);
         rect_fill_dsc.border_width = 0;
 
-        lv_canvas_draw_rect(canvas, level, 0, 102 - level, 5, &rect_fill_dsc);
+        lv_canvas_draw_rect(canvas, level, 0, 102 - level, 6, &rect_fill_dsc);
 
         // 오른쪽 어두운 영역 양 끝 위/아래 1픽셀 검정 → 라운드 느낌
         lv_canvas_set_px(canvas, 101, 0, lv_color_black());   // 오른쪽 위
-        lv_canvas_set_px(canvas, 101, 4, lv_color_black());   // 오른쪽 아래
+        lv_canvas_set_px(canvas, 101, 5, lv_color_black());   // 오른쪽 아래
     }
 }
 
@@ -182,6 +181,10 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(label);
 }
+
+// 이하 초기화, 이벤트, 위젯 생성 부분은 기존 5픽셀 코드와 동일
+// 단, 캔버스 높이, draw_battery 호출 시 6픽셀 적용
+
 
 // 모든 위젯 상태 업데이트
 void battery_status_update_cb(struct battery_state state) {
