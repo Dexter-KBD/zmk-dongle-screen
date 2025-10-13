@@ -57,7 +57,7 @@ static lv_color_t battery_color(uint8_t level) {
     else if (level <= 15) return lv_color_hex(0xFA0D0B);
     else if (level <= 30) return lv_color_hex(0xF98300);
     else if (level <= 40) return lv_color_hex(0xFFFF00);
-    else return lv_color_hex(0x00AA00); // 더 진한 초록 적용
+    else return lv_color_hex(0x00CC00); // 조금 더 밝은 진한 녹색
 }
 
 static lv_color_t battery_color_dark(uint8_t level) {
@@ -73,7 +73,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
 
     lv_draw_rect_dsc_t rect_dsc;
 
-    // 1️⃣ 흰색 배터리 쉘 (가장 뒤)
+    // 1️⃣ 흰색 배터리 쉘 (가장 뒤) - 왼쪽 끝 0
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
@@ -81,21 +81,21 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_dsc.radius = 11;
     lv_canvas_draw_rect(canvas, 0, 0, 102, 32, &rect_dsc);
 
-    // 2️⃣ 검정 공백 (배경)
+    // 2️⃣ 검정 공백 (배경) - 오른쪽으로 3px 이동
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0x000000);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.radius = 8;
-    lv_canvas_draw_rect(canvas, 0, 3, 96, 26, &rect_dsc);
+    lv_canvas_draw_rect(canvas, 3, 3, 96, 26, &rect_dsc);
 
-    // 3️⃣ 어두운 배경
+    // 3️⃣ 어두운 배경 - 오른쪽으로 6px 이동
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = battery_color_dark(level);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.radius = 5;
-    lv_canvas_draw_rect(canvas, 0, 6, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
+    lv_canvas_draw_rect(canvas, 6, 6, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
 
-    // 4️⃣ 밝은 채움
+    // 4️⃣ 밝은 채움 - 오른쪽으로 6px 이동
     if (level > 0) {
         uint8_t width = (level > 100 ? 100 : level);
         uint8_t pixel_width = (uint8_t)((BATTERY_WIDTH * width) / 100);
@@ -104,7 +104,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         rect_dsc.bg_color = battery_color(level);
         rect_dsc.bg_opa = LV_OPA_COVER;
         rect_dsc.radius = 5;
-        lv_canvas_draw_rect(canvas, 0, 6, pixel_width, BATTERY_HEIGHT, &rect_dsc);
+        lv_canvas_draw_rect(canvas, 6, 6, pixel_width, BATTERY_HEIGHT, &rect_dsc);
     }
 }
 
@@ -171,9 +171,9 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
-        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 32, LV_IMG_CF_TRUE_COLOR); // 흰색 포함
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 32, LV_IMG_CF_TRUE_COLOR);
 
-        lv_obj_t *battery_label = lv_label_create(image_canvas); // 캔버스 자식
+        lv_obj_t *battery_label = lv_label_create(image_canvas);
 
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, -70 + (i * BATTERY_SPACING), 0);
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
