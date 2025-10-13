@@ -27,18 +27,18 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 // -------------------- 설정 값 --------------------
-#define BATTERY_WIDTH 96
+#define BATTERY_WIDTH 98         // 기존 96 -> 2픽셀 증가
 #define BATTERY_HEIGHT 20
 #define BATTERY_RADIUS 5
 
 #define BACK_BLACK_RADIUS 8
 #define BACK_WHITE_RADIUS 10
 
-#define CANVAS_WIDTH (BATTERY_WIDTH + 16)  // 좌우 여백 포함
-#define CANVAS_HEIGHT (BATTERY_HEIGHT + 20) // 상하 여백 조금 더 확보
+#define CANVAS_WIDTH (BATTERY_WIDTH + 16)  
+#define CANVAS_HEIGHT (BATTERY_HEIGHT + 24) // 아래쪽 여백 추가 (기존 20 -> 24)
 
-#define BLACK_BAR_HEIGHT 26  // 검정 바 높이
-#define WHITE_BAR_HEIGHT 30  // 흰색 테두리 높이
+#define BLACK_BAR_HEIGHT 26
+#define WHITE_BAR_HEIGHT 30
 
 #define BATTERY_TEXT_COLOR lv_color_hex(0x000000)
 #define BATTERY_X_OFFSET 135
@@ -126,19 +126,19 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         BLACK_BAR_HEIGHT,
         &rect_dsc);
 
-    // 3. 어두운색 배터리 바 (좌우폭 10픽셀 줄임)
+    // 3. 어두운색 배터리 바 (좌우폭 2픽셀 증가)
     rect_dsc.radius = BATTERY_RADIUS;
     rect_dsc.bg_color = battery_color_dark(level);
     lv_canvas_draw_rect(canvas,
         x_offset + 5,
         y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT)/2,
-        BATTERY_WIDTH - 10,
+        BATTERY_WIDTH - 6, // 기존 -10 -> -6
         BATTERY_HEIGHT,
         &rect_dsc);
 
     // 4. 밝은색 배터리 잔량 표시
     rect_dsc.bg_color = battery_color(level);
-    int level_width = (level * (BATTERY_WIDTH - 10)) / 100;
+    int level_width = (level * (BATTERY_WIDTH - 6)) / 100;
     lv_canvas_draw_rect(canvas,
         x_offset + 5,
         y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT)/2,
@@ -170,8 +170,8 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level); // % 제거
 
-    // 숫자 2픽셀 뒤로 올림
-    lv_obj_set_y(label, lv_obj_get_y(symbol) - 2);
+    // 숫자 Y 위치 3픽셀 아래로
+    lv_obj_set_y(label, lv_obj_get_y(symbol) + 3);
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
