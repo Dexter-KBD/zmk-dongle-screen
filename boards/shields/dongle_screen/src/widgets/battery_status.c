@@ -185,7 +185,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         // 좌우 배터리 위치 조정 (중심 간격 140픽셀)
         int x_offset = (i == 0) ? -70 : 70;
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, 10, 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
