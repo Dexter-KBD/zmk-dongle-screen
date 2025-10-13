@@ -29,8 +29,10 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define BATTERY_TEXT_COLOR_HEX 0xFFFFFF
 #define BATTERY_WIDTH 90
 #define BATTERY_HEIGHT 20
+#define BATTERY_SPACING 140
 #define CANVAS_WIDTH 112
 #define CANVAS_HEIGHT 32
+#define LEFT_MARGIN 6
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -59,7 +61,7 @@ static lv_color_t battery_color(uint8_t level) {
     else if (level <= 15) return lv_color_hex(0xFA0D0B);
     else if (level <= 30) return lv_color_hex(0xF98300);
     else if (level <= 40) return lv_color_hex(0xFFFF00);
-    else return lv_color_hex(0x00E900);
+    else return lv_color_hex(0x00E800);
 }
 
 static lv_color_t battery_color_dark(uint8_t level) {
@@ -75,12 +77,12 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
     lv_draw_rect_dsc_t rect_dsc;
 
-    // 흰색 배경
+    // 흰색 배경 (가장 바깥)
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 7;
+    rect_dsc.radius = 7; // ← 라디우스 변경
     lv_canvas_draw_rect(canvas, 2, 0, 102, 32, &rect_dsc);
 
     // 검정 공백
@@ -140,28 +142,50 @@ void battery_status_update_cb(struct battery_state state) {
     }
 }
 
-// 빈 함수 정의로 링크 에러 방지
-void widget_dongle_battery_status_init(void) {
-    // 빈 함수, 기존 초기화 로직이 필요 없으면 그대로 둬도 됨
+static struct battery_state peripheral_battery_status_get_state(const zmk_event_t *eh) {
+    const struct zmk_peripheral_battery_state_changed *ev = as_zmk_peripheral_battery_state_changed(eh);
+    return (struct battery_state){ .source = ev->source + SOURCE_OFFSET, .level = ev->state_of_charge };
 }
+
+static struct battery_state central_battery_status_get_state(const zmk_event_t *eh) {
+    const struct zmk_battery_state_changed *ev = as_zmk_battery_state_changed(eh);
+    return (struct battery_state){ .source = 0, .level = (ev != NULL) ? ev->state_of_charge : zmk_battery_state_of_charge() };
+}
+
+static struct battery_state battery_status_get_state(const zmk_event_t *eh) {
+    if (as_zmk_peripheral_battery_state_changed(eh) != NULL)
+        return peripheral_battery_status_get_state(eh);
+    else
+        return central_battery_status_get_state(eh);
+}
+
+ZMK_DISPLAY_WIDGET_LISTENER(widget_dongle_battery_status, struct battery_state,
+                            battery_status_update_cb, battery_status_get_state)
+
+ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_peripheral_battery_state_changed);
+
+#if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
+#if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
+ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
+#endif
+#endif
 
 // 위젯 초기화
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 260, 40);
-    lv_obj_set_pos(widget->obj, 10, 0); // 컨테이너 오른쪽으로 5픽셀 추가 이동
+    lv_obj_set_size(widget->obj, 240, 40); // 컨테이너 폭
+    lv_obj_align(widget->obj, LV_ALIGN_TOP_RIGHT, -20, 0); // 오른쪽 위에서 -20px 오프셋
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 숫자 라벨도 캔버스와 같은 부모로 생성
-        lv_obj_t *battery_label = lv_label_create(widget->obj);
+        lv_obj_t *battery_label = lv_label_create(image_canvas);
 
         // 좌우 배터리 위치 조정 (중심 간격 140픽셀)
         int x_offset = (i == 0) ? -70 : 70;
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, x_offset, 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
@@ -171,10 +195,11 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     sys_slist_append(&widgets, &widget->node);
     init_peripheral_tracking();
-    widget_dongle_battery_status_init(); // 링크 에러 방지용 빈 함수 호출
+    widget_dongle_battery_status_init();
 
     return 0;
 }
+
 
 lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
     return widget->obj;
