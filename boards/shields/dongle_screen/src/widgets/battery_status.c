@@ -27,20 +27,21 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 // -------------------- 설정 값 --------------------
-#define BATTERY_HEIGHT 20
 #define BATTERY_WIDTH 96
-#define BATTERY_RADIUS 5     // 3,4번 밝은/어두운 배터리 바 radius 5
+#define BATTERY_HEIGHT 20
+#define BATTERY_RADIUS 5
 
-#define BACK_BLACK_HEIGHT 26
 #define BACK_BLACK_RADIUS 8
-
-#define BACK_WHITE_HEIGHT 30
 #define BACK_WHITE_RADIUS 10
+
+#define CANVAS_WIDTH (BATTERY_WIDTH + 16)  // 좌우 여백 포함
+#define CANVAS_HEIGHT (BATTERY_HEIGHT + 16) // 상하 여백 포함
+
+#define BLACK_BAR_HEIGHT 26  // 검정 바 높이
+#define WHITE_BAR_HEIGHT 30  // 흰색 테두리 높이
 
 #define BATTERY_TEXT_COLOR lv_color_hex(0x000000)
 #define BATTERY_X_OFFSET 135
-
-#define CANVAS_HEIGHT (BACK_WHITE_HEIGHT + 4) // 상단 여유 4픽셀
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -54,7 +55,7 @@ struct battery_object {
     lv_obj_t *label;
 } battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
-static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][(BATTERY_WIDTH + 8) * CANVAS_HEIGHT];
+static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][CANVAS_WIDTH * CANVAS_HEIGHT];
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
 // -------------------- 초기화 --------------------
@@ -65,10 +66,10 @@ static void init_peripheral_tracking(void) {
 
 static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
     if (source >= (ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET)) return false;
-    
+
     int8_t previous_level = last_battery_levels[source];
     bool reconnecting = (previous_level < 1) && (new_level >= 1);
-    
+
     if (reconnecting) {
         LOG_INF("Peripheral %d reconnected: %d -> %d (was %s)", 
                 source, previous_level, new_level, 
@@ -96,52 +97,51 @@ static lv_color_t battery_color_dark(uint8_t level) {
 
 // -------------------- 배터리 그리기 --------------------
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
-    const int margin = 2;
-    const int inner_width = BATTERY_WIDTH;
-    const int canvas_width = BATTERY_WIDTH + 8;
-
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_COVER);
 
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
 
-    // 1. 흰색 바 (테두리, 가장 뒤)
-    rect_dsc.radius = BACK_WHITE_RADIUS;
+    int x_offset = (CANVAS_WIDTH - BATTERY_WIDTH) / 2;
+    int y_offset = (CANVAS_HEIGHT - WHITE_BAR_HEIGHT) / 2;
+
+    // 1. 흰색 테두리
+    rect_dsc.radius = WHITE_BAR_RADIUS;
     rect_dsc.bg_color = lv_color_white();
     rect_dsc.border_width = 0;
     lv_canvas_draw_rect(canvas,
-        (canvas_width - inner_width)/2 - margin,
-        4,
-        inner_width + 2*margin,
-        BACK_WHITE_HEIGHT,
+        x_offset - 3, // 좌우 여백
+        y_offset - 3, // 상하 여백
+        BATTERY_WIDTH + 6,
+        WHITE_BAR_HEIGHT,
         &rect_dsc);
 
-    // 2. 검정 바 (7픽셀 위로)
+    // 2. 검정 바 (흰색 안쪽)
     rect_dsc.radius = BACK_BLACK_RADIUS;
     rect_dsc.bg_color = lv_color_black();
     lv_canvas_draw_rect(canvas,
-        (canvas_width - inner_width)/2,
-        4 + (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2 - 7, // 위로 7픽셀
-        inner_width,
-        BACK_BLACK_HEIGHT,
+        x_offset,
+        y_offset,
+        BATTERY_WIDTH,
+        BLACK_BAR_HEIGHT,
         &rect_dsc);
 
-    // 3. 어두운색 배터리 바 (5픽셀 위)
+    // 3. 어두운색 배터리 바
     rect_dsc.radius = BATTERY_RADIUS;
     rect_dsc.bg_color = battery_color_dark(level);
     lv_canvas_draw_rect(canvas,
-        (canvas_width - inner_width)/2,
-        4 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 - 5, // 위로 5픽셀
-        inner_width,
+        x_offset,
+        y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT) / 2,
+        BATTERY_WIDTH,
         BATTERY_HEIGHT,
         &rect_dsc);
 
-    // 4. 밝은색 배터리 잔량 표시 (어두운색 위, 5픽셀 위)
+    // 4. 밝은색 배터리 잔량 표시
     rect_dsc.bg_color = battery_color(level);
-    int level_width = (level * inner_width) / 100;
+    int level_width = (level * BATTERY_WIDTH) / 100;
     lv_canvas_draw_rect(canvas,
-        (canvas_width - inner_width)/2,
-        4 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 - 5, // 위로 5픽셀
+        x_offset,
+        y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT) / 2,
         level_width,
         BATTERY_HEIGHT,
         &rect_dsc);
@@ -219,12 +219,12 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_obj_t *battery_label = lv_label_create(widget->obj);
 
-        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH + 8, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         // 캔버스 중앙 정렬
-        lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8);
-        // 숫자 5픽셀 아래
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 5);
+        lv_obj_align(image_canvas, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 0);
+        // 숫자 배터리 바 중앙
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
