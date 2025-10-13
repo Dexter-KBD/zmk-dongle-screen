@@ -190,10 +190,6 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     lv_obj_move_foreground(label);
 }
 
-// 이하 초기화, 이벤트, 위젯 생성 부분은 기존 코드와 동일
-// 단, 캔버스 높이, draw_battery 호출 시 7픽셀 적용
-
-
 // 모든 위젯 상태 업데이트
 void battery_status_update_cb(struct battery_state state) {
     struct zmk_widget_dongle_battery_status *widget;
@@ -248,7 +244,8 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_obj_t *battery_label = lv_label_create(widget->obj);
 
-        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 5, LV_IMG_CF_TRUE_COLOR);
+        // **여기 높이 7픽셀 적용**
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 7, LV_IMG_CF_TRUE_COLOR);
 
         lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -60 + (i * 120), -8);
         lv_obj_align(battery_label, LV_ALIGN_TOP_MID, -60 + (i * 120), 0);
