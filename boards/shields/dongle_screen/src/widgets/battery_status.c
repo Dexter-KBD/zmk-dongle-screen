@@ -21,7 +21,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include "battery_status.h"
 #include "../brightness.h"
 
-// 중앙 장치 포함 여부에 따른 소스 오프셋
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
     #define SOURCE_OFFSET 1
 #else
@@ -29,53 +28,40 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 // -------------------- 설정 값 --------------------
-// 배터리 막대 높이, 길이, radius
 #define BATTERY_HEIGHT 20
 #define BATTERY_WIDTH 96
 #define BATTERY_RADIUS 4
 
-// 뒤에 깔리는 검정 바
-#define BACK_BLACK_HEIGHT 22
+#define BACK_BLACK_HEIGHT 24
 #define BACK_BLACK_RADIUS 6
 
-// 뒤에 깔리는 흰색 바 (테두리 역할)
-#define BACK_WHITE_HEIGHT 24
+#define BACK_WHITE_HEIGHT 28
 #define BACK_WHITE_RADIUS 8
 
-// 숫자 색상 헥스코드
-#define BATTERY_TEXT_COLOR lv_color_hex(0x000000) // 검정색, 필요 시 변경 가능
-
-// 막대 간 간격 조정
+#define BATTERY_TEXT_COLOR lv_color_hex(0x000000)
 #define BATTERY_X_OFFSET 135
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
-// 배터리 상태 구조체
 struct battery_state {
-    uint8_t source;      // 배터리 소스 (0=중앙, 1..=퍼리퍼럴)
-    uint8_t level;       // 배터리 잔량 %
+    uint8_t source;
+    uint8_t level;
 };
 
-// 위젯 오브젝트 구조체
 struct battery_object {
-    lv_obj_t *symbol; // 배터리 캔버스
-    lv_obj_t *label;  // 배터리 레이블
+    lv_obj_t *symbol;
+    lv_obj_t *label;
 } battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
-// 캔버스 버퍼 (검정 바 + 흰 바 포함 여유)
 static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][(BATTERY_WIDTH + 8) * BACK_WHITE_HEIGHT];
-
-// Peripheral reconnection tracking
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
 // -------------------- 초기화 --------------------
 static void init_peripheral_tracking(void) {
-    for (int i = 0; i < (ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET); i++) {
+    for (int i = 0; i < (ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET); i++)
         last_battery_levels[i] = -1;
-    }
 }
 
-// 재연결 감지
 static bool is_peripheral_reconnecting(uint8_t source, uint8_t new_level) {
     if (source >= (ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET)) return false;
     
@@ -109,30 +95,31 @@ static lv_color_t battery_color_dark(uint8_t level) {
 
 // -------------------- 배터리 그리기 --------------------
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
-    const int margin = 2; // 좌우 여유
+    const int margin = 2;
     const int inner_width = BATTERY_WIDTH;
-
+    const int canvas_width = BATTERY_WIDTH + 8;
+    
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_COVER);
 
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
 
-    // 1. 흰색 바 (뒤쪽, 테두리 역할)
+    // 1. 흰색 바 (테두리 역할, 높이 28, radius 8)
     rect_dsc.radius = BACK_WHITE_RADIUS;
     rect_dsc.bg_color = lv_color_white();
     rect_dsc.border_width = 0;
-    lv_canvas_draw_rect(canvas, 0, 0, inner_width + 8, BACK_WHITE_HEIGHT, &rect_dsc);
+    lv_canvas_draw_rect(canvas, (canvas_width - inner_width)/2 - margin, 0, inner_width + 2*margin, BACK_WHITE_HEIGHT, &rect_dsc);
 
-    // 2. 검정 바 (흰색 바 위, 높이 22)
+    // 2. 검정 바 (흰색 바 위, 높이 24, radius 6)
     rect_dsc.radius = BACK_BLACK_RADIUS;
     rect_dsc.bg_color = lv_color_black();
-    lv_canvas_draw_rect(canvas, margin, (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2, inner_width, BACK_BLACK_HEIGHT, &rect_dsc);
+    lv_canvas_draw_rect(canvas, (canvas_width - inner_width)/2, (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2, inner_width, BACK_BLACK_HEIGHT, &rect_dsc);
 
-    // 3. 실제 배터리 잔량 표시 (밝은색 바, 높이 20, radius 4)
+    // 3. 밝은색 배터리 잔량 표시 (높이 20, radius 4)
     rect_dsc.radius = BATTERY_RADIUS;
     rect_dsc.bg_color = battery_color(level);
-    int level_width = (level * inner_width) / 100; // 0~100% 비율
-    lv_canvas_draw_rect(canvas, margin, (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2, level_width, BATTERY_HEIGHT, &rect_dsc);
+    int level_width = (level * inner_width) / 100;
+    lv_canvas_draw_rect(canvas, (canvas_width - inner_width)/2, (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2, level_width, BATTERY_HEIGHT, &rect_dsc);
 }
 
 // -------------------- 심볼 + 레이블 --------------------
@@ -187,10 +174,9 @@ static struct battery_state battery_status_get_state(const zmk_event_t *eh) {
     else return central_battery_status_get_state(eh);
 }
 
-// -------------------- 디스플레이 리스너 등록 --------------------
+// -------------------- 디스플레이 리스너 --------------------
 ZMK_DISPLAY_WIDGET_LISTENER(widget_dongle_battery_status, struct battery_state,
                             battery_status_update_cb, battery_status_get_state)
-
 ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_peripheral_battery_state_changed);
 
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
@@ -210,10 +196,10 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH + 8, BACK_WHITE_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 막대 위로 7픽셀 올리고 캔버스 중앙 배치
+        // 캔버스 중앙 정렬, 막대 위로 7픽셀 올리기
         lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -8 - 7);
 
-        // 숫자 레이블 5픽셀 올리기
+        // 숫자 레이블 5픽셀 위로
         lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), -5);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
@@ -229,7 +215,6 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     return 0;
 }
 
-// -------------------- 공개 객체 --------------------
 lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
     return widget->obj;
 }
