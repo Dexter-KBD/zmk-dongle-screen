@@ -144,11 +144,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         lv_canvas_set_px(canvas, 101, 0, lv_color_black());   // 오른쪽 위
         lv_canvas_set_px(canvas, 101, 6, lv_color_black());   // 오른쪽 아래
 
-        // 4. 맨 아래 1픽셀 보정 (검정색 섞기)
-        for (int x = 1; x < 101; x++) {
-            lv_color_t px_color = lv_canvas_get_px(canvas, x, 6);
-            lv_canvas_set_px(canvas, x, 6, lv_color_mix(px_color, lv_color_black(), LV_OPA_20));
-        }
+    
     }
 }
 
