@@ -27,15 +27,15 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 // -------------------- 설정 값 --------------------
-#define BATTERY_WIDTH 98         // 좌우폭 2픽셀 늘림
+#define BATTERY_WIDTH 100         // 좌우 1픽셀씩 추가
 #define BATTERY_HEIGHT 20
 #define BATTERY_RADIUS 5
 
 #define BACK_BLACK_RADIUS 8
 #define BACK_WHITE_RADIUS 10
 
-#define CANVAS_WIDTH (BATTERY_WIDTH + 16)  
-#define CANVAS_HEIGHT (BATTERY_HEIGHT + 24)
+#define CANVAS_WIDTH (BATTERY_WIDTH + 16)
+#define CANVAS_HEIGHT (BATTERY_HEIGHT + 38)  // 여백 확보 위해 높이 증가
 
 #define BLACK_BAR_HEIGHT 26
 #define WHITE_BAR_HEIGHT 30
@@ -128,21 +128,21 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         BLACK_BAR_HEIGHT,
         &rect_dsc);
 
-    // 3. 어두운색 배터리 바 (좌우 대칭)
+    // 3. 어두운색 배터리 바 (좌우 대칭 + 좌우 1픽셀씩 확장)
     rect_dsc.radius = BATTERY_RADIUS;
     rect_dsc.bg_color = battery_color_dark(level);
     lv_canvas_draw_rect(canvas,
-        x_offset + SIDE_MARGIN,
+        x_offset + SIDE_MARGIN - 1,
         y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT)/2,
-        BATTERY_WIDTH - 2*SIDE_MARGIN,
+        BATTERY_WIDTH - 2*SIDE_MARGIN + 2,
         BATTERY_HEIGHT,
         &rect_dsc);
 
-    // 4. 밝은색 배터리 잔량 표시 (좌우 대칭)
+    // 4. 밝은색 배터리 잔량 표시 (좌우 대칭 + 좌우 1픽셀씩 확장)
     rect_dsc.bg_color = battery_color(level);
-    int level_width = (level * (BATTERY_WIDTH - 2*SIDE_MARGIN)) / 100;
+    int level_width = (level * (BATTERY_WIDTH - 2*SIDE_MARGIN + 2)) / 100;
     lv_canvas_draw_rect(canvas,
-        x_offset + SIDE_MARGIN,
+        x_offset + SIDE_MARGIN - 1,
         y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT)/2,
         level_width,
         BATTERY_HEIGHT,
@@ -172,9 +172,8 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level);
 
-    // 숫자 위치 유지
-    // Y는 기존 값 그대로
-    lv_obj_set_y(label, lv_obj_get_y(symbol));
+    // 숫자 위치 Y 5픽셀 아래로
+    lv_obj_set_y(label, lv_obj_get_y(symbol) + 5);
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
