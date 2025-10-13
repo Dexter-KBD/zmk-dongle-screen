@@ -65,7 +65,7 @@ static lv_color_t battery_color(uint8_t level) {
     else if (level <= 15) return lv_color_hex(0xFA0D0B);
     else if (level <= 30) return lv_color_hex(0xF98300);
     else if (level <= 40) return lv_color_hex(0xFFFF00);
-    else return lv_color_hex(0x00FF00); // 초록색 변경
+    else return lv_color_hex(0x00FF00);
 }
 
 // 어두운 배경
@@ -117,9 +117,9 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     lv_obj_set_style_text_color(label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
 
     if (state.level < 1) lv_label_set_text(label, "sleep");
-    else lv_label_set_text_fmt(label, "%u", state.level); // % 제거
+    else lv_label_set_text_fmt(label, "%u", state.level);
 
-    // 막대 중앙에 위치
+    // 레이블를 캔버스 중앙에 맞춤 (캔버스가 부모)
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
@@ -169,12 +169,14 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
-        lv_obj_t *battery_label = lv_label_create(widget->obj);
-
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 20, LV_IMG_CF_TRUE_COLOR);
 
+        // 레이블을 캔버스의 자식으로 생성
+        lv_obj_t *battery_label = lv_label_create(image_canvas);
+
+        // 좌우 배치
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, -60 + (i * 120), 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, -60 + (i * 120), 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0); // 캔버스 중앙
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
