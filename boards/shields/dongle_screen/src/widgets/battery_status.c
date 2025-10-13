@@ -32,7 +32,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define BATTERY_SPACING 140   // 두 막대 중심 간격
 #define CANVAS_WIDTH 112
 #define CANVAS_HEIGHT 32
-#define LEFT_MARGIN 6         // 왼쪽 여유 공간 확보
+#define LEFT_MARGIN 6         // 화면 양끝 여유
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -60,7 +60,7 @@ static lv_color_t battery_color(uint8_t level) {
     else if (level <= 15) return lv_color_hex(0xFA0D0B);
     else if (level <= 30) return lv_color_hex(0xF98300);
     else if (level <= 40) return lv_color_hex(0xFFFF00);
-    else return lv_color_hex(0x00DD00); // 아주 살짝 밝은 녹색
+    else return lv_color_hex(0x00DD00); // 조금 더 밝은 녹색
 }
 
 static lv_color_t battery_color_dark(uint8_t level) {
@@ -73,29 +73,28 @@ static lv_color_t battery_color_dark(uint8_t level) {
 
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
-
     lv_draw_rect_dsc_t rect_dsc;
 
-    // 1️⃣ 흰색 배터리 쉘 (가장 뒤)
+    // 1️⃣ 흰색 배터리 쉘 (가장 바깥)
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 11;
+    rect_dsc.radius = 9;
     lv_canvas_draw_rect(canvas, 0, 0, 102, 32, &rect_dsc);
 
     // 2️⃣ 검정 공백 (배경)
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0x000000);
     rect_dsc.bg_opa = LV_OPA_COVER;
-    rect_dsc.radius = 8;
-    lv_canvas_draw_rect(canvas, 4, 3, 98, 26, &rect_dsc);
+    rect_dsc.radius = 6;
+    lv_canvas_draw_rect(canvas, 4, 2, 98, 28, &rect_dsc);
 
     // 3️⃣ 어두운 배경
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = battery_color_dark(level);
     rect_dsc.bg_opa = LV_OPA_COVER;
-    rect_dsc.radius = 5;
+    rect_dsc.radius = 3;
     lv_canvas_draw_rect(canvas, 6, 6, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
 
     // 4️⃣ 밝은 채움
@@ -106,7 +105,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         lv_draw_rect_dsc_init(&rect_dsc);
         rect_dsc.bg_color = battery_color(level);
         rect_dsc.bg_opa = LV_OPA_COVER;
-        rect_dsc.radius = 5;
+        rect_dsc.radius = 3;
         lv_canvas_draw_rect(canvas, 6, 6, pixel_width, BATTERY_HEIGHT, &rect_dsc);
     }
 }
@@ -126,7 +125,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level);
 
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0); // 캔버스 중앙
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
     lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
@@ -178,8 +177,11 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         lv_obj_t *battery_label = lv_label_create(image_canvas);
 
-        // 좌측 여유 확보: LEFT_MARGIN 적용
-        lv_obj_align(image_canvas, LV_ALIGN_LEFT_MID, LEFT_MARGIN + (i * BATTERY_SPACING), 0);
+        // 왼쪽 막대: LEFT_MARGIN 기준, 오른쪽 막대: 여유 확보
+        int x_offset = LEFT_MARGIN + (i * BATTERY_SPACING);
+        if (i == 1) x_offset -= 6; // 오른쪽 막대 여유 확보
+        lv_obj_align(image_canvas, LV_ALIGN_LEFT_MID, x_offset, 0);
+
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
