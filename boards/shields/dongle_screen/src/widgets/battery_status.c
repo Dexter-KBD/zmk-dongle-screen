@@ -50,9 +50,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.border_width = 0;
 
-    // -----------------------
-    // 1. 밝은 배터리 영역 (잔량 표시)
-    // -----------------------
+    // 밝은 배터리 영역
     int inner_x = OUTER_WHITE_THICKNESS + OUTER_BLACK_THICKNESS;
     int inner_y = OUTER_WHITE_THICKNESS + OUTER_BLACK_THICKNESS;
     int inner_w = BATTERY_WIDTH - 2*inner_x;
@@ -63,22 +61,16 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_dsc.radius = INNER_RADIUS;
     lv_canvas_draw_rect(canvas, inner_x, inner_y, bright_w, inner_h, &rect_dsc);
 
-    // -----------------------
-    // 2. 어두운 배터리 영역 (잔량 안 차는 영역)
-    // -----------------------
+    // 어두운 배터리 영역
     rect_dsc.bg_color = battery_color_dark(level);
     lv_canvas_draw_rect(canvas, inner_x + bright_w, inner_y, inner_w - bright_w, inner_h, &rect_dsc);
 
-    // -----------------------
-    // 3. 흰 테두리
-    // -----------------------
+    // 흰 테두리
     rect_dsc.bg_color = lv_color_white();
     rect_dsc.radius = INNER_RADIUS + OUTER_BLACK_THICKNESS;
     lv_canvas_draw_rect(canvas, 0, 0, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
 
-    // -----------------------
-    // 4. 검정 테두리
-    // -----------------------
+    // 검정 테두리
     rect_dsc.bg_color = lv_color_black();
     rect_dsc.radius = INNER_RADIUS + OUTER_BLACK_THICKNESS + OUTER_WHITE_THICKNESS;
     lv_canvas_draw_rect(canvas, -OUTER_WHITE_THICKNESS, -OUTER_WHITE_THICKNESS,
@@ -86,9 +78,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
                         BATTERY_HEIGHT + OUTER_WHITE_THICKNESS*2,
                         &rect_dsc);
 
-    // -----------------------
-    // 5. 숫자 중앙 표시
-    // -----------------------
+    // 숫자 중앙 표시
     char buf[8];
     if(level < 1) snprintf(buf, sizeof(buf), "sleep");
     else snprintf(buf, sizeof(buf), "%u%%", level);
@@ -105,7 +95,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
 // 배터리 심볼 + 레이블 설정
 static void set_battery_symbol(struct battery_object *obj, uint8_t level) {
     draw_battery(obj->canvas, level);
-    lv_label_set_text(obj->label, ""); // 숫자는 캔버스 안쪽에 그려서 레이블 텍스트는 비움
+    lv_label_set_text(obj->label, ""); // 숫자는 캔버스 안쪽에 그림
 }
 
 // 초기화
@@ -124,8 +114,26 @@ int battery_widget_init(lv_obj_t *parent) {
     return 0;
 }
 
-// 배터리 업데이트 콜백
+// 이벤트 콜백: 중앙 배터리
+static void handle_central_battery_event(const zmk_event_t *eh) {
+    const struct zmk_battery_state_changed *ev = as_zmk_battery_state_changed(eh);
+    if(!ev) return;
+    battery_update(0, ev->state_of_charge); // 0 = 중앙
+}
+
+// 이벤트 콜백: 퍼리퍼럴 배터리
+static void handle_peripheral_battery_event(const zmk_event_t *eh) {
+    const struct zmk_peripheral_battery_state_changed *ev = as_zmk_peripheral_battery_state_changed(eh);
+    if(!ev) return;
+    battery_update(ev->source + 1, ev->state_of_charge); // +1 = 중앙 뒤
+}
+
+// 배터리 업데이트
 void battery_update(uint8_t source, uint8_t level) {
     if (source >= NUM_BATTERIES) return;
     set_battery_symbol(&battery_objects[source], level);
 }
+
+// ZMK 이벤트 구독
+ZMK_SUBSCRIPTION(battery_widget, zmk_battery_state_changed);
+ZMK_SUBSCRIPTION(battery_widget, zmk_peripheral_battery_state_changed);
