@@ -115,14 +115,14 @@ static lv_color_t battery_color_dark(uint8_t level) {
 /**
  * @brief 배터리 캔버스 그리기 (높이 20픽셀)
  * - 전체 어두운 바 위에 밝은 잔량 표시
- * - radius = 5 적용
+ * - radius = 7 적용
  */
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_COVER); // 전체 배경 검정
 
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.radius = 5;
+    rect_dsc.radius = 7;
     rect_dsc.border_width = 0;
 
     // 1. 배경 전체를 어두운 배터리 색으로 채우기
