@@ -27,6 +27,8 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #endif
 
 #define BATTERY_TEXT_COLOR_HEX 0xFFFFFF  // 흰색 텍스트
+#define BATTERY_WIDTH 90                 // 막대 가로 길이 90으로 변경
+#define BATTERY_HEIGHT 20                // 막대 높이 유지
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -40,7 +42,7 @@ struct battery_object {
     lv_obj_t *label;
 } battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
-static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][102 * 20];
+static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][BATTERY_WIDTH * BATTERY_HEIGHT];
 
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
@@ -87,11 +89,11 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_bg_dsc.bg_opa = LV_OPA_COVER;
     rect_bg_dsc.border_width = 0;
     rect_bg_dsc.radius = 5;
-    lv_canvas_draw_rect(canvas, 0, 0, 102, 20, &rect_bg_dsc);
+    lv_canvas_draw_rect(canvas, 0, 0, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_bg_dsc);
 
     if (level > 0) {
         uint8_t width = (level > 100 ? 100 : level);
-        uint8_t pixel_width = (uint8_t)((102 * width) / 100);
+        uint8_t pixel_width = (uint8_t)((BATTERY_WIDTH * width) / 100);
 
         lv_draw_rect_dsc_t rect_fill_dsc;
         lv_draw_rect_dsc_init(&rect_fill_dsc);
@@ -99,7 +101,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         rect_fill_dsc.bg_opa = LV_OPA_COVER;
         rect_fill_dsc.border_width = 0;
         rect_fill_dsc.radius = 5;
-        lv_canvas_draw_rect(canvas, 0, 0, pixel_width, 20, &rect_fill_dsc);
+        lv_canvas_draw_rect(canvas, 0, 0, pixel_width, BATTERY_HEIGHT, &rect_fill_dsc);
     }
 }
 
@@ -169,7 +171,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
-        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 20, LV_IMG_CF_TRUE_COLOR);
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH, BATTERY_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         // 레이블을 캔버스의 자식으로 생성
         lv_obj_t *battery_label = lv_label_create(image_canvas);
