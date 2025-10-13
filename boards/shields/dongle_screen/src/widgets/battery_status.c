@@ -35,7 +35,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define BACK_WHITE_RADIUS 10
 
 #define CANVAS_WIDTH (BATTERY_WIDTH + 16)  // 좌우 여백 포함
-#define CANVAS_HEIGHT (BATTERY_HEIGHT + 16) // 상하 여백 포함
+#define CANVAS_HEIGHT (BATTERY_HEIGHT + 20) // 상하 여백 조금 더 확보
 
 #define BLACK_BAR_HEIGHT 26  // 검정 바 높이
 #define WHITE_BAR_HEIGHT 30  // 흰색 테두리 높이
@@ -103,20 +103,20 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_draw_rect_dsc_init(&rect_dsc);
 
     int x_offset = (CANVAS_WIDTH - BATTERY_WIDTH) / 2;
-    int y_offset = (CANVAS_HEIGHT - WHITE_BAR_HEIGHT) / 2;
+    int y_offset = (CANVAS_HEIGHT - WHITE_BAR_HEIGHT); // 아래쪽 여백 확보
 
     // 1. 흰색 테두리
     rect_dsc.radius = BACK_WHITE_RADIUS;
     rect_dsc.bg_color = lv_color_white();
     rect_dsc.border_width = 0;
     lv_canvas_draw_rect(canvas,
-        x_offset - 3, // 좌우 여백
-        y_offset - 3, // 상하 여백
+        x_offset - 3, 
+        y_offset - 3, 
         BATTERY_WIDTH + 6,
         WHITE_BAR_HEIGHT,
         &rect_dsc);
 
-    // 2. 검정 바 (흰색 안쪽)
+    // 2. 검정 바
     rect_dsc.radius = BACK_BLACK_RADIUS;
     rect_dsc.bg_color = lv_color_black();
     lv_canvas_draw_rect(canvas,
@@ -126,22 +126,22 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
         BLACK_BAR_HEIGHT,
         &rect_dsc);
 
-    // 3. 어두운색 배터리 바
+    // 3. 어두운색 배터리 바 (좌우폭 10픽셀 줄임)
     rect_dsc.radius = BATTERY_RADIUS;
     rect_dsc.bg_color = battery_color_dark(level);
     lv_canvas_draw_rect(canvas,
-        x_offset,
-        y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT) / 2,
-        BATTERY_WIDTH,
+        x_offset + 5,
+        y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT)/2,
+        BATTERY_WIDTH - 10,
         BATTERY_HEIGHT,
         &rect_dsc);
 
     // 4. 밝은색 배터리 잔량 표시
     rect_dsc.bg_color = battery_color(level);
-    int level_width = (level * BATTERY_WIDTH) / 100;
+    int level_width = (level * (BATTERY_WIDTH - 10)) / 100;
     lv_canvas_draw_rect(canvas,
-        x_offset,
-        y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT) / 2,
+        x_offset + 5,
+        y_offset + (BLACK_BAR_HEIGHT - BATTERY_HEIGHT)/2,
         level_width,
         BATTERY_HEIGHT,
         &rect_dsc);
@@ -169,6 +169,9 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level); // % 제거
+
+    // 숫자 2픽셀 뒤로 올림
+    lv_obj_set_y(label, lv_obj_get_y(symbol) - 2);
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
@@ -221,9 +224,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 캔버스 중앙 정렬
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 0);
-        // 숫자 배터리 바 중앙
         lv_obj_align(battery_label, LV_ALIGN_CENTER, -BATTERY_X_OFFSET/2 + (i * BATTERY_X_OFFSET), 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
