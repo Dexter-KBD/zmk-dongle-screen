@@ -182,7 +182,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     widget->obj = lv_obj_create(parent);
 
     int canvas_count = ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET;
-    int canvas_spacing = 140; // ⚠️ 두 캔버스 중앙 기준 간격 50픽셀
+    int canvas_spacing = 50; // 두 캔버스 간격 50픽셀
     int total_width = canvas_count * BATTERY_WIDTH + (canvas_count - 1) * canvas_spacing;
 
     // 컨테이너 폭을 화면 폭보다 넓지 않게 제한
