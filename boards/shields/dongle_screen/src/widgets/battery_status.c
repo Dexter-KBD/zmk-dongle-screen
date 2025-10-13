@@ -43,7 +43,7 @@ struct battery_object {
 } battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
 // 캔버스 버퍼
-static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][102 * 6]; // 높이 6픽셀
+static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][102 * 18]; // 높이 18픽셀
 
 // Peripheral reconnection tracking
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
@@ -91,7 +91,7 @@ static lv_color_t battery_color(uint8_t level) {
 // 배터리 색상 어두운 버전 (줄어든 부분)
 static lv_color_t battery_color_dark(uint8_t level) {
     if (level < 1) {
-        return lv_color_hex(0x5F5CE7); // 슬립 위랑 같은색
+        return lv_color_hex(0x3F3EC0); // 슬립/완전 방전 어두운
     } else if (level <= 15) {
         return lv_color_hex(0xB20908); // 빨강 어두운
     } else if (level <= 30) {
@@ -104,41 +104,33 @@ static lv_color_t battery_color_dark(uint8_t level) {
 }
 
 /**
- * @brief 배터리 캔버스 그리기 (높이 6픽셀)
+ * @brief 배터리 캔버스 그리기 (높이 18픽셀, radius 사용)
  * - 왼쪽 고정, 오른쪽 줄어듦
  * - 밝은색 영역 + 어두운색 영역
- * - 양 끝 위/아래 1픽셀 검정 → 라운드 효과
+ * - radius 4픽셀 적용 → 자연스러운 둥근 모서리
+ * - 숫자는 바 안 중앙, 검정색
  * - level == 0일 경우 별도 처리
  */
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.radius = 4; // 둥근 모서리
+    rect_dsc.border_width = 0;
+
     if (level == 0) {
-        lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
-        lv_canvas_set_px(canvas, 0, 0, lv_color_black());
-        lv_canvas_set_px(canvas, 0, 5, lv_color_black());
-        lv_canvas_set_px(canvas, 101, 0, lv_color_black());
-        lv_canvas_set_px(canvas, 101, 5, lv_color_black());
+        rect_dsc.bg_color = battery_color(level);
+        lv_canvas_draw_rect(canvas, 0, 0, 102, 18, &rect_dsc);
         return;
     }
 
-    // 전체 캔버스 밝은색 초기화
-    lv_canvas_fill_bg(canvas, battery_color(level), LV_OPA_COVER);
+    // 1. 전체 캔버스 밝은 색
+    rect_dsc.bg_color = battery_color(level);
+    lv_canvas_draw_rect(canvas, 0, 0, 102, 18, &rect_dsc);
 
-    // 왼쪽 모서리 위/아래 검정
-    lv_canvas_set_px(canvas, 0, 0, lv_color_black());
-    lv_canvas_set_px(canvas, 0, 5, lv_color_black());
-
-    // 오른쪽 어두운 영역 덮기
+    // 2. 오른쪽 어두운 영역
     if (level < 102) {
-        lv_draw_rect_dsc_t rect_fill_dsc;
-        lv_draw_rect_dsc_init(&rect_fill_dsc);
-        rect_fill_dsc.bg_color = battery_color_dark(level);
-        rect_fill_dsc.border_width = 0;
-
-        lv_canvas_draw_rect(canvas, level, 0, 102 - level, 6, &rect_fill_dsc);
-
-        // 오른쪽 모서리 위/아래 검정
-        lv_canvas_set_px(canvas, 101, 0, lv_color_black());
-        lv_canvas_set_px(canvas, 101, 5, lv_color_black());
+        rect_dsc.bg_color = battery_color_dark(level);
+        lv_canvas_draw_rect(canvas, level, 0, 102 - level, 18, &rect_dsc);
     }
 }
 
@@ -165,13 +157,12 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    lv_obj_set_style_text_color(label, battery_color(state.level), 0);
+    // 레이블 색상은 검정색
+    lv_obj_set_style_text_color(label, lv_color_black(), 0);
+    lv_label_set_text_fmt(label, "%u", state.level); // % 제거
 
-    if (state.level < 1) {
-        lv_label_set_text(label, "sleep");
-    } else {
-        lv_label_set_text_fmt(label, "%u", state.level);
-    }
+    // 중앙 배치
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
@@ -233,11 +224,11 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_obj_t *battery_label = lv_label_create(widget->obj);
 
-        // **여기 높이 6픽셀 적용**
-        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 6, LV_IMG_CF_TRUE_COLOR);
+        // 캔버스 높이 18픽셀
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], 102, 18, LV_IMG_CF_TRUE_COLOR);
 
         lv_obj_align(image_canvas, LV_ALIGN_BOTTOM_MID, -60 + (i * 120), -8);
-        lv_obj_align(battery_label, LV_ALIGN_TOP_MID, -60 + (i * 120), 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, -60 + (i * 120), -8);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
