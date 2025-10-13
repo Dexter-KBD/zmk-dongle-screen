@@ -60,7 +60,7 @@ static lv_color_t battery_color(uint8_t level) {
     else if (level <= 15) return lv_color_hex(0xFA0D0B);
     else if (level <= 30) return lv_color_hex(0xF98300);
     else if (level <= 40) return lv_color_hex(0xFFFF00);
-    else return lv_color_hex(0x00E500); // 밝은 녹색
+    else return lv_color_hex(0x00E800); // 밝은 녹색
 }
 
 static lv_color_t battery_color_dark(uint8_t level) {
@@ -75,15 +75,15 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
     lv_draw_rect_dsc_t rect_dsc;
 
-    // 1️⃣ 흰색 배터리 쉘 (가장 바깥)
+    // 1️⃣ 흰색 배경 (가장 바깥)
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
     rect_dsc.radius = 9;
-    lv_canvas_draw_rect(canvas, 2, 0, 102, 32, &rect_dsc); // 흰색 x +2
+    lv_canvas_draw_rect(canvas, 2, 0, 102, 32, &rect_dsc);
 
-    // 2️⃣ 검정 공백 (배경)
+    // 2️⃣ 검정 공백
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0x000000);
     rect_dsc.bg_opa = LV_OPA_COVER;
@@ -169,7 +169,7 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 300, 40); // 컨테이너 폭 300
+    lv_obj_set_size(widget->obj, 260, 40); // 컨테이너 폭 260
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
@@ -179,7 +179,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         int x_offset = LEFT_MARGIN + (i * BATTERY_SPACING);
         if (i == 1) x_offset -= 6;
-        lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0); // 중앙 정렬
+        lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0); // 캔버스 중앙 정렬
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
