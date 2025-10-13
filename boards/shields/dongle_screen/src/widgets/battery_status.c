@@ -181,10 +181,13 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
 
-    // 컨테이너 폭을 캔버스 수와 간격에 맞춰 자동 조정
     int canvas_count = ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET;
-    int canvas_spacing = 10; // ⚠️ 캔버스 간 좌우 간격 (조절 가능)
-    int container_width = canvas_count * (BATTERY_WIDTH + canvas_spacing);
+    int canvas_spacing = 50; // ⚠️ 두 캔버스 중앙 기준 간격 50픽셀
+    int total_width = canvas_count * BATTERY_WIDTH + (canvas_count - 1) * canvas_spacing;
+
+    // 컨테이너 폭을 화면 폭보다 넓지 않게 제한
+    int screen_width = lv_obj_get_width(lv_scr_act());
+    int container_width = MIN(total_width, screen_width);
     lv_obj_set_size(widget->obj, container_width, 40);
 
     // 화면 상단 중앙에 배치
@@ -196,11 +199,9 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
         lv_obj_t *battery_label = lv_label_create(image_canvas);
 
-        // ⚠️ 캔버스 배치 (컨테이너 안에서 좌우 균등 배치)
-        // i=0,1,... : 캔버스 인덱스
-        // canvas_spacing : 캔버스 간 간격 조절
-        int x_offset = i * (BATTERY_WIDTH + canvas_spacing);
-        lv_obj_align(image_canvas, LV_ALIGN_LEFT_MID, x_offset, 0);
+        // ⚠️ 캔버스 배치: 컨테이너 중앙 기준으로 좌우 균형
+        int x_offset = i * (BATTERY_WIDTH + canvas_spacing) - total_width / 2 + BATTERY_WIDTH / 2;
+        lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0);
 
         // 레이블은 캔버스 중앙에 배치
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
