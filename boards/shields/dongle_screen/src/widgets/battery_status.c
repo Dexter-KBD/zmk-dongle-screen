@@ -21,9 +21,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include "../brightness.h"
 
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
-    #define SOURCE_OFFSET 1
+#define SOURCE_OFFSET 1
 #else
-    #define SOURCE_OFFSET 0
+#define SOURCE_OFFSET 0
 #endif
 
 #define BATTERY_WIDTH 95
@@ -83,7 +83,7 @@ static lv_color_t battery_color_dark(uint8_t level) {
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
 
-    // 1️⃣ 외부 흰색 테두리
+    // 1️⃣ 외부 흰색 테두리 radius 9
     lv_draw_rect_dsc_t rect_white;
     lv_draw_rect_dsc_init(&rect_white);
     rect_white.bg_color = lv_color_white();
@@ -92,7 +92,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_white.radius = 9;
     lv_canvas_draw_rect(canvas, 0, 0, BATTERY_WIDTH + 8, BATTERY_HEIGHT, &rect_white);
 
-    // 2️⃣ 검정 테두리
+    // 2️⃣ 검정 테두리 radius 7
     lv_draw_rect_dsc_t rect_black;
     lv_draw_rect_dsc_init(&rect_black);
     rect_black.bg_color = lv_color_black();
@@ -101,7 +101,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_black.radius = 7;
     lv_canvas_draw_rect(canvas, 4, 0, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_black);
 
-    // 3️⃣ 어두운 막대 배경
+    // 3️⃣ 어두운 막대 radius 5
     lv_draw_rect_dsc_t rect_bg_dsc;
     lv_draw_rect_dsc_init(&rect_bg_dsc);
     rect_bg_dsc.bg_color = battery_color_dark(level);
@@ -110,7 +110,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_bg_dsc.radius = 5;
     lv_canvas_draw_rect(canvas, 4, 0, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_bg_dsc);
 
-    // 4️⃣ 밝은 막대 잔량 표시
+    // 4️⃣ 밝은 막대 (잔량 표시) radius 5
     if (level > 0) {
         uint8_t width = (level > 100 ? 100 : level);
         uint8_t pixel_width = (uint8_t)((BATTERY_WIDTH * width) / 100);
@@ -139,11 +139,11 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     lv_obj_set_style_text_color(label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
 
     if (state.level < 1) lv_label_set_text(label, "sleep");
-    else lv_label_set_text_fmt(label, "%u", state.level); // % 제거
+    else lv_label_set_text_fmt(label, "%u", state.level);
 
-    // **각 배터리 막대 중앙에 숫자 위치**
-    lv_obj_align(label, LV_ALIGN_CENTER, lv_obj_get_x(symbol) + BATTERY_WIDTH / 2 - 4, lv_obj_get_y(symbol) + BATTERY_HEIGHT / 2 - 8);
-
+    // **각 배터리 막대 내부 중앙에 숫자 위치**
+    lv_obj_align(label, LV_ALIGN_CENTER, lv_obj_get_x(symbol) + 4 + BATTERY_WIDTH / 2, lv_obj_get_y(symbol) + BATTERY_HEIGHT / 2);
+    
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
     lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
@@ -196,7 +196,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH + 8, BATTERY_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, -60 + (i * 120), 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, -60 + (i * 120), 0);
+        lv_obj_align(label, LV_ALIGN_CENTER, -60 + (i * 120), 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
