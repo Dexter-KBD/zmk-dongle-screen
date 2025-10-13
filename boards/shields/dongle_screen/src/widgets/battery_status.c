@@ -106,7 +106,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     int y_offset = (CANVAS_HEIGHT - WHITE_BAR_HEIGHT) / 2;
 
     // 1. 흰색 테두리
-    rect_dsc.radius = WHITE_BAR_RADIUS;
+    rect_dsc.radius = BACK_WHITE_RADIUS;
     rect_dsc.bg_color = lv_color_white();
     rect_dsc.border_width = 0;
     lv_canvas_draw_rect(canvas,
