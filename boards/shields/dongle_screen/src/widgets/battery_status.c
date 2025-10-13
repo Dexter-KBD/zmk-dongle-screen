@@ -29,7 +29,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 // -------------------- 설정 값 --------------------
 #define BATTERY_HEIGHT 20
 #define BATTERY_WIDTH 96
-#define BATTERY_RADIUS 4
+#define BATTERY_RADIUS 5     // 3,4번 밝은/어두운 배터리 바 radius 5
 
 #define BACK_BLACK_HEIGHT 26
 #define BACK_BLACK_RADIUS 8
@@ -111,27 +111,27 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_dsc.border_width = 0;
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2 - margin,
-        4, // 상단 여유
+        4,
         inner_width + 2*margin,
         BACK_WHITE_HEIGHT,
         &rect_dsc);
 
-    // 2. 검정 바 (흰색 바 위, 7픽셀 위로 이동)
+    // 2. 검정 바 (7픽셀 위로)
     rect_dsc.radius = BACK_BLACK_RADIUS;
     rect_dsc.bg_color = lv_color_black();
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2,
-        4 + 7 + (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2,
+        4 + (BACK_WHITE_HEIGHT - BACK_BLACK_HEIGHT)/2 - 7, // 위로 7픽셀
         inner_width,
         BACK_BLACK_HEIGHT,
         &rect_dsc);
 
-    // 3. 어두운색 배터리 바 (검정 위, 5픽셀 위로)
+    // 3. 어두운색 배터리 바 (5픽셀 위)
     rect_dsc.radius = BATTERY_RADIUS;
     rect_dsc.bg_color = battery_color_dark(level);
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2,
-        4 + 7 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 + 5,
+        4 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 - 5, // 위로 5픽셀
         inner_width,
         BATTERY_HEIGHT,
         &rect_dsc);
@@ -141,7 +141,7 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     int level_width = (level * inner_width) / 100;
     lv_canvas_draw_rect(canvas,
         (canvas_width - inner_width)/2,
-        4 + 7 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 + 5,
+        4 + (BACK_WHITE_HEIGHT - BATTERY_HEIGHT)/2 - 5, // 위로 5픽셀
         level_width,
         BATTERY_HEIGHT,
         &rect_dsc);
@@ -170,7 +170,6 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level); // % 제거
 
-    // 숫자 5픽셀 아래
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
     lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
