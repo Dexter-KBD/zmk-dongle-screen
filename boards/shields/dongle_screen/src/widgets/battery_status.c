@@ -80,51 +80,59 @@ static lv_color_t battery_text_color(uint8_t level) {
     return lv_color_hex(0xFFFFFF); // 기본 흰색
 }
 
-/* ──────────────────────────────────────────────
- * 🔹 배터리 막대 그리기 (radius 적용)
- *    - 왼쪽 직각, 오른쪽만 둥근 모양 유지
- * ────────────────────────────────────────────── */
-static void draw_battery(lv_obj_t *canvas, uint8_t level) {
-    // 1️⃣ 밝은 영역
-    lv_draw_rect_dsc_t bright;
-    lv_draw_rect_dsc_init(&bright);
-    bright.radius = 6;
-    bright.bg_color = battery_color(level);
-    bright.border_width = 0;
+// ============================
+// 배터리 표시 전체 코드
+// ============================
 
-    lv_canvas_draw_rect(canvas, 0, 0, 102, 18, &bright);
+static void draw_battery_bar(lv_obj_t *parent, int x, int y, int level, uint32_t main_color_hex, uint32_t dark_color_hex, uint32_t text_color_hex) {
+    // 배터리 전체 크기
+    int width = 102;
+    int height = 6; // 막대 높이
 
-    // 2️⃣ 어두운 영역 — 왼쪽 직각, 오른쪽 둥글게
-    if (level < 102) {
-        lv_draw_rect_dsc_t dark;
-        lv_draw_rect_dsc_init(&dark);
-        dark.radius = 6;
-        dark.bg_color = battery_color_dark(level);
-        dark.border_width = 0;
+    // ---- 배경 막대 (라운드 전체 적용) ----
+    lv_obj_t *bg_bar = lv_obj_create(parent);
+    lv_obj_set_size(bg_bar, width, height);
+    lv_obj_set_pos(bg_bar, x, y);
+    lv_obj_set_style_bg_color(bg_bar, lv_color_hex(main_color_hex), 0);
+    lv_obj_set_style_radius(bg_bar, height / 2, 0); // 전체 둥글게
+    lv_obj_set_style_border_width(bg_bar, 0, 0);
 
-        lv_area_t dark_area = { .x1 = level, .y1 = 0, .x2 = 101, .y2 = 17 };
-        lv_canvas_draw_rect(canvas, dark_area.x1, dark_area.y1,
-                            dark_area.x2 - dark_area.x1 + 1,
-                            dark_area.y2 - dark_area.y1 + 1,
-                            &dark);
+    // ---- 덮는 어두운 부분 (왼쪽 직각, 오른쪽 둥글게) ----
+    if (level < 100) {
+        int dark_width = width * (100 - level) / 100;
+
+        lv_obj_t *dark_bar = lv_obj_create(parent);
+        lv_obj_set_size(dark_bar, dark_width, height);
+        lv_obj_set_pos(dark_bar, x + width - dark_width, y); // 오른쪽부터 줄어듦
+        lv_obj_set_style_bg_color(dark_bar, lv_color_hex(dark_color_hex), 0);
+        lv_obj_set_style_border_width(dark_bar, 0, 0);
+
+        // 오른쪽만 둥글게, 왼쪽은 직각
+        lv_obj_set_style_radius(dark_bar, height / 2, 0);
+        lv_obj_set_style_clip_corner(dark_bar, true);
     }
+
+    // ---- 중앙 숫자 표시 ----
+    lv_obj_t *label = lv_label_create(parent);
+    lv_label_set_text_fmt(label, "%d%%", level);
+    lv_obj_align_to(label, bg_bar, LV_ALIGN_CENTER, 0, 0); // 막대 중앙 정렬
+    lv_obj_set_style_text_color(label, lv_color_hex(text_color_hex), 0);
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_bg_opa(label, LV_OPA_TRANSP, 0);
 }
 
-/* ──────────────────────────────────────────────
- * 🔹 배터리 상태 표시 (숫자 + 막대)
- * ────────────────────────────────────────────── */
-static void set_battery_symbol(struct battery_object *obj, struct battery_state state) {
-    last_battery_levels[state.source] = state.level;
-    draw_battery(obj->canvas, state.level);
+// ============================
+// 예시: 두 개의 배터리 바 생성
+// ============================
 
-    // 중앙에 숫자 표시, 흰색 (함수로 색상 지정)
-    lv_label_set_text_fmt(obj->label, "%u", state.level);
-    lv_obj_set_style_text_color(obj->label, battery_text_color(state.level), 0);
-    lv_obj_align(obj->label, LV_ALIGN_CENTER, 0, 0);
+void create_battery_display(lv_obj_t *parent) {
+    // 왼쪽 배터리 바
+    draw_battery_bar(parent, 20, 20, 75, 0x08FB10, 0x067A0B, 0xFFFFFF);
 
-    lv_obj_clear_flag(obj->canvas, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_clear_flag(obj->label, LV_OBJ_FLAG_HIDDEN);
+    // 오른쪽 배터리 바
+    draw_battery_bar(parent, 150, 20, 45, 0x5F5CE7, 0x3F3EC0, 0xFFFFFF);
 }
+
 
 /* ──────────────────────────────────────────────
  * 🔹 상태 업데이트 & 이벤트 처리
