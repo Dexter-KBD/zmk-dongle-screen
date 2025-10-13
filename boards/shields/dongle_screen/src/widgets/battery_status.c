@@ -182,16 +182,17 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     widget->obj = lv_obj_create(parent);
 
     int canvas_count = ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET;
-    int canvas_spacing = 50; // 두 캔버스 간격 50픽셀
-    int total_width = canvas_count * BATTERY_WIDTH + (canvas_count - 1) * canvas_spacing;
+    int canvas_spacing = 46; // ⚠️ 두 캔버스 중앙 기준 간격 50픽셀
 
-    // 컨테이너 폭을 화면 폭보다 넓지 않게 제한
-    int screen_width = lv_obj_get_width(lv_scr_act());
-    int container_width = MIN(total_width, screen_width);
+    // ⚠️ 컨테이너 폭을 수동으로 260px로 설정
+    int container_width = 260;
     lv_obj_set_size(widget->obj, container_width, 40);
 
     // 화면 상단 중앙에 배치
     lv_obj_align(widget->obj, LV_ALIGN_TOP_MID, 0, 0);
+
+    // 전체 캔버스 폭 계산 (중앙 기준 배치용)
+    int total_width = canvas_count * BATTERY_WIDTH + (canvas_count - 1) * canvas_spacing;
 
     for (int i = 0; i < canvas_count; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
