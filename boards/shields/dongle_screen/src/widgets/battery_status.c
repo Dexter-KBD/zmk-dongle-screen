@@ -141,8 +141,8 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level);
 
-    // **각 배터리 막대 내부 중앙에 숫자 위치**
-    lv_obj_align(label, LV_ALIGN_CENTER, lv_obj_get_x(symbol) + 4 + BATTERY_WIDTH / 2, lv_obj_get_y(symbol) + BATTERY_HEIGHT / 2);
+    // 각 배터리 막대 내부 중앙에 숫자 위치
+    lv_obj_align(label, LV_ALIGN_CENTER, lv_obj_get_x(symbol) + BATTERY_WIDTH / 2 + 4, lv_obj_get_y(symbol) + BATTERY_HEIGHT / 2);
     
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
@@ -196,7 +196,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], BATTERY_WIDTH + 8, BATTERY_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, -60 + (i * 120), 0);
-        lv_obj_align(label, LV_ALIGN_CENTER, -60 + (i * 120), 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, -60 + (i * 120), 0);
 
         lv_obj_add_flag(image_canvas, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(battery_label, LV_OBJ_FLAG_HIDDEN);
