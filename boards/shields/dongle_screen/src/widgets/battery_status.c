@@ -174,7 +174,7 @@ ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_battery_state_changed);
 int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 240, 40); // 컨테이너 폭
-    lv_obj_align(widget->obj, LV_ALIGN_TOP_RIGHT, -20, 0); // 오른쪽 위에서 -20px 오프셋
+    lv_obj_align(widget->obj, LV_ALIGN_TOP_RIGHT, 0, 0); // 오른쪽 위에서 -20px 오프셋
 
     for (int i = 0; i < ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET; i++) {
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
