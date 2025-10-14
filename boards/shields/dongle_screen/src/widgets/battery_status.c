@@ -93,12 +93,12 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 흰색 막대
     rect_dsc.bg_opa = LV_OPA_COVER;
-    lv_canvas_draw_rect(canvas, 113, 12, 3, 12, &rect_dsc);
+    lv_canvas_draw_rect(canvas, 113, 14, 3, 12, &rect_dsc);
 
     // 오른쪽 둥근 느낌 주기 (검은 점으로 마무리)
     lv_color_t black = lv_color_hex(0x000000);
-    lv_canvas_set_px(canvas, 115, 12, black);  // 오른쪽 위 모서리
-    lv_canvas_set_px(canvas, 115, 23, black);  // 오른쪽 아래 모서리
+    lv_canvas_set_px(canvas, 115, 14, black);  // 오른쪽 위 모서리
+    lv_canvas_set_px(canvas, 115, 25, black);  // 오른쪽 아래 모서리
     
     // 내부 검정 공백
     lv_draw_rect_dsc_init(&rect_dsc);
