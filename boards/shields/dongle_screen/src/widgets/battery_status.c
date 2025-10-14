@@ -32,7 +32,7 @@ LV_FONT_DECLARE(NerdFonts_Regular_20);
 #endif
 
 #define BATTERY_TEXT_COLOR_HEX 0xFFFFFF // ✅ 흰색 숫자
-#define BATTERY_SHADOW_COLOR_HEX 0x4c4c4c // ⭐ 회색빛 숫자 그림자 
+#define BATTERY_SHADOW_COLOR_HEX 0x282828 // ⭐ 회색빛 숫자 그림자 
 #define BATTERY_WIDTH 90
 #define BATTERY_HEIGHT 20
 #define CANVAS_WIDTH 118
@@ -152,7 +152,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     }
 
     // 📌 위치 조정
-    lv_obj_align(label_shadow, LV_ALIGN_CENTER, 2, 2); // 숫자 그림자 위치
+    lv_obj_align(label_shadow, LV_ALIGN_CENTER, 1, 1); // 숫자 그림자 위치
     lv_obj_align(label, LV_ALIGN_CENTER, -1, -1);       // 흰색 숫자 위치
 
     // 🔄 표시 갱신
