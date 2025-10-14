@@ -99,10 +99,10 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 본체와 같은 흰색
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 2;  // 살짝만 둥글게
+    rect_dsc.radius = 1;  // 살짝만 둥글게
     // 본체 오른쪽 중앙에 폭 4, 높이 8짜리 돌출부 추가
     // (x=106, y=12)은 대략 본체 중앙 높이 기준으로 계산됨
-    lv_canvas_draw_rect(canvas, 106, 12, 4, 12, &rect_dsc);
+    lv_canvas_draw_rect(canvas, 106, 12, 3, 12, &rect_dsc);
 
     /* ───────────────────────────────
      * 2. 내부 검정 공백 (흰색 틀 안쪽 공간)
