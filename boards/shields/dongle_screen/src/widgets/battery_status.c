@@ -31,7 +31,8 @@ LV_FONT_DECLARE(NerdFonts_Regular_20);
     #define SOURCE_OFFSET 0
 #endif
 
-#define BATTERY_TEXT_COLOR_HEX 0xFFFFFF // ✅ 흰색 글자
+#define BATTERY_TEXT_COLOR_HEX 0xFFFFFF // ✅ 흰색 숫자
+#define BATTERY_SHADOW_COLOR_HEX 0x4c4c4c // ⭐ 회색빛 숫자 그림자 
 #define BATTERY_WIDTH 90
 #define BATTERY_HEIGHT 20
 #define CANVAS_WIDTH 118
@@ -49,7 +50,7 @@ struct battery_state {
 struct battery_object {
     lv_obj_t *symbol;         // 배터리 캔버스
     lv_obj_t *label;          // 밝은 숫자
-    lv_obj_t *label_shadow;   // 검정 그림자 숫자
+    lv_obj_t *label_shadow;   // 그림자 숫자
 };
 
 static struct battery_object battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
@@ -150,9 +151,9 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
         lv_label_set_text_fmt(label, "%u", state.level);
     }
 
-    // 📌 위치: 그림자는 오른쪽 아래로 2px 이동
-    lv_obj_align(label_shadow, LV_ALIGN_CENTER, 2, 2);
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+    // 📌 위치 조정
+    lv_obj_align(label_shadow, LV_ALIGN_CENTER, 2, 2); // 숫자 그림자 위치
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, -1);       // 흰색 숫자 위치
 
     // 🔄 표시 갱신
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
@@ -220,17 +221,17 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 🖤 그림자 레이블 (먼저 생성 → 뒤쪽)
+        // 🩶 회색빛 그림자 레이블 (먼저 생성 → 뒤쪽)
         lv_obj_t *battery_label_shadow = lv_label_create(image_canvas);
         lv_obj_set_style_text_font(battery_label_shadow, &NerdFonts_Regular_20, 0);
-        lv_obj_set_style_text_color(battery_label_shadow, lv_color_hex(0x000000), 0);
+        lv_obj_set_style_text_color(battery_label_shadow, lv_color_hex(BATTERY_SHADOW_COLOR_HEX), 0);
         lv_obj_align(battery_label_shadow, LV_ALIGN_CENTER, 2, 2);
 
         // 🤍 밝은 숫자 레이블 (나중 생성 → 위쪽)
         lv_obj_t *battery_label = lv_label_create(image_canvas);
         lv_obj_set_style_text_font(battery_label, &NerdFonts_Regular_20, 0);
         lv_obj_set_style_text_color(battery_label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, -1); // ⭐ 1px 위로 이동
 
         // 🔧 캔버스 배치
         int x_offset = i * (BATTERY_WIDTH + canvas_spacing) - total_width / 2 + BATTERY_WIDTH / 2;
