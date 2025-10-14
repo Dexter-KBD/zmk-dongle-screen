@@ -4,21 +4,7 @@
  * Opts: --bpp 4 --size 16 --no-compress --lcd --stride 1 --align 1 --font SF-Pro.ttf --symbols sleep --range 48-57 --format lvgl -o apple_16.c
  ******************************************************************************/
 
-#ifdef __has_include
-    #if __has_include("lvgl.h")
-        #ifndef LV_LVGL_H_INCLUDE_SIMPLE
-            #define LV_LVGL_H_INCLUDE_SIMPLE
-        #endif
-    #endif
-#endif
-
-#ifdef LV_LVGL_H_INCLUDE_SIMPLE
-    #include "lvgl.h"
-#else
-    #include "lvgl/lvgl.h"
-#endif
-
-
+#include "lvgl.h"
 
 #ifndef APPLE_16
 #define APPLE_16 1
@@ -384,6 +370,8 @@ static lv_font_fmt_txt_dsc_t font_dsc = {
 
 };
 
+extern const lv_font_t lv_font_montserrat_20;
+
 
 
 /*-----------------
@@ -401,18 +389,19 @@ lv_font_t apple_16 = {
     .line_height = 14,          /*The maximum line height required by the font*/
     .base_line = 3,             /*Baseline measured from the bottom of the line*/
 #if !(LVGL_VERSION_MAJOR == 6 && LVGL_VERSION_MINOR == 0)
-    .subpx = LV_FONT_SUBPX_HOR,
+    .subpx = LV_FONT_SUBPX_NONE,
 #endif
 #if LV_VERSION_CHECK(7, 4, 0) || LVGL_VERSION_MAJOR >= 8
-    .underline_position = -2,
+    .underline_position = -3,
     .underline_thickness = 1,
 #endif
     .dsc = &font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
 #if LV_VERSION_CHECK(8, 2, 0) || LVGL_VERSION_MAJOR >= 9
-    .fallback = NULL,
+    .fallback = &lv_font_montserrat_20,
 #endif
     .user_data = NULL,
 };
+
 
 
 
