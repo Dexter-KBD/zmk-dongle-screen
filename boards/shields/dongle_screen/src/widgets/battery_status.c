@@ -153,7 +153,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     // 📌 위치 조정
     lv_obj_align(label_shadow, LV_ALIGN_CENTER, 2, 2); // 숫자 그림자 위치
-    lv_obj_align(label, LV_ALIGN_CENTER, -2, -2);       // 흰색 숫자 위치
+    lv_obj_align(label, LV_ALIGN_CENTER, -1, -1);       // 흰색 숫자 위치
 
     // 🔄 표시 갱신
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
