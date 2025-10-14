@@ -9,6 +9,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
+#include <lvgl.h> // ⚡ LVGL 기본 헤더 추가
+
 #include <zmk/battery.h>
 #include <zmk/split/central.h>
 #include <zmk/display.h>
@@ -19,6 +21,9 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #include "battery_status.h"
 #include "../brightness.h"
+
+// ⚡ 커스텀 폰트 선언
+LV_FONT_DECLARE(apple_16);
 
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
     #define SOURCE_OFFSET 1
@@ -77,65 +82,50 @@ static lv_color_t battery_color_dark(uint8_t level) {
 
 // 배터리 캔버스 그리기 (건전지 모양)
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
-    // 캔버스 초기화 (투명 배경)
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
     lv_draw_rect_dsc_t rect_dsc;
 
-    /* ───────────────────────────────
-     * 1. 배터리 외곽 (흰색 본체 테두리)
-     * ─────────────────────────────── */
+    // 1. 외곽 흰색 테두리
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 흰색 테두리
+    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 7;  // 모서리 약간 둥글게
-    // (x=2, y=0, width=102, height=32)
+    rect_dsc.radius = 7;
     lv_canvas_draw_rect(canvas, 2, 0, 102, 32, &rect_dsc);
 
-    /* ───────────────────────────────
-     * 1-2. +극 돌출부 (건전지 머리 부분)
-     * ─────────────────────────────── */
+    // 1-2. +극 돌출부
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 본체와 같은 흰색
+    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 1;  // 살짝만 둥글게
+    rect_dsc.radius = 1;
     lv_canvas_draw_rect(canvas, 106, 12, 3, 12, &rect_dsc);
 
-    /* ───────────────────────────────
-     * 2. 내부 검정 공백 (흰색 틀 안쪽 공간)
-     * ─────────────────────────────── */
+    // 2. 내부 검정 공백
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0x000000);  // 검정색 내부
+    rect_dsc.bg_color = lv_color_hex(0x000000);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.radius = 6;
     lv_canvas_draw_rect(canvas, 4, 2, 98, 28, &rect_dsc);
 
-    /* ───────────────────────────────
-     * 3. 어두운 배경 (레벨 채움 전 바탕)
-     * ─────────────────────────────── */
+    // 3. 어두운 배경
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = battery_color_dark(level);  // 배터리 단계별 어두운 색
+    rect_dsc.bg_color = battery_color_dark(level);
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.radius = 3;
-    // 실제 배터리 본체 내부 영역
     lv_canvas_draw_rect(canvas, 8, 6, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
 
-    /* ───────────────────────────────
-     * 4. 밝은 채움 (실제 충전량)
-     * ─────────────────────────────── */
+    // 4. 밝은 채움
     if (level > 0) {
         uint8_t width = (level > 100 ? 100 : level);
         uint8_t pixel_width = (uint8_t)((BATTERY_WIDTH * width) / 100);
-
         lv_draw_rect_dsc_init(&rect_dsc);
-        rect_dsc.bg_color = battery_color(level);  // 단계별 밝은 색상
+        rect_dsc.bg_color = battery_color(level);
         rect_dsc.bg_opa = LV_OPA_COVER;
         rect_dsc.radius = 3;
         lv_canvas_draw_rect(canvas, 8, 6, pixel_width, BATTERY_HEIGHT, &rect_dsc);
     }
 }
-
 
 // 배터리 심볼 + 레이블 업데이트
 static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
@@ -149,6 +139,9 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     draw_battery(symbol, state.level);
 
     lv_obj_set_style_text_color(label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
+
+    // ⚡ 폰트 적용
+    lv_obj_set_style_text_font(label, &apple_16, 0);
 
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level);
@@ -204,9 +197,9 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     widget->obj = lv_obj_create(parent);
 
     int canvas_count = ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET;
-    int canvas_spacing = 46; // ⚠️ 두 캔버스 중앙 기준 간격 50픽셀
+    int canvas_spacing = 46; // 두 캔버스 중앙 기준 간격 50픽셀
 
-    // ⚠️ 컨테이너 폭을 수동으로 260px로 설정
+    // 컨테이너 폭 수동 설정
     int container_width = 260;
     lv_obj_set_size(widget->obj, container_width, 40);
 
@@ -226,6 +219,9 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         int x_offset = i * (BATTERY_WIDTH + canvas_spacing) - total_width / 2 + BATTERY_WIDTH / 2;
         lv_obj_align(image_canvas, LV_ALIGN_CENTER, x_offset, 0);
 
+        // ⚡ 라벨에 커스텀 폰트 적용
+        lv_obj_set_style_text_font(battery_label, &apple_16, 0);
+
         // 레이블은 캔버스 중앙에 배치
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
@@ -241,7 +237,6 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
 
     return 0;
 }
-
 
 // 위젯 객체 반환
 lv_obj_t *zmk_widget_dongle_battery_status_obj(struct zmk_widget_dongle_battery_status *widget) {
