@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include "../brightness.h"
 
 // 커스텀 폰트 선언
-LV_FONT_DECLARE(NerdFonts_Regular_20);
+LV_FONT_DECLARE(apple_16);
 
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
     #define SOURCE_OFFSET 1
@@ -134,7 +134,7 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
     draw_battery(symbol, state.level);
 
     lv_obj_set_style_text_color(label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
-    lv_obj_set_style_text_font(label, &NerdFonts_Regular_20, 0);
+    lv_obj_set_style_text_font(label, &apple_16, 0);
 
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level);
@@ -203,7 +203,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
         lv_obj_t *battery_label = lv_label_create(image_canvas);
-        lv_obj_set_style_text_font(battery_label, &NerdFonts_Regular_20, 0);
+        lv_obj_set_style_text_font(battery_label, &apple_16, 0);
         lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
         int x_offset = i * (BATTERY_WIDTH + canvas_spacing) - total_width / 2 + BATTERY_WIDTH / 2;
