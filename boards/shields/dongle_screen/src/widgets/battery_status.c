@@ -75,45 +75,69 @@ static lv_color_t battery_color_dark(uint8_t level) {
     else return lv_color_hex(0x04910A);
 }
 
-// 배터리 캔버스 그리기
+// 배터리 캔버스 그리기 (건전지 모양)
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
+    // 캔버스 초기화 (투명 배경)
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
     lv_draw_rect_dsc_t rect_dsc;
 
-    // 1. 흰색 외곽
+    /* ───────────────────────────────
+     * 1. 배터리 외곽 (흰색 본체 테두리)
+     * ─────────────────────────────── */
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
+    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 흰색 테두리
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.border_width = 0;
-    rect_dsc.radius = 7;
+    rect_dsc.radius = 7;  // 모서리 약간 둥글게
+    // (x=2, y=0, width=102, height=32)
     lv_canvas_draw_rect(canvas, 2, 0, 102, 32, &rect_dsc);
 
-    // 2. 검정 공백
+    /* ───────────────────────────────
+     * 1-2. +극 돌출부 (건전지 머리 부분)
+     * ─────────────────────────────── */
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0x000000);
+    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 본체와 같은 흰색
+    rect_dsc.bg_opa = LV_OPA_COVER;
+    rect_dsc.border_width = 0;
+    rect_dsc.radius = 2;  // 살짝만 둥글게
+    // 본체 오른쪽 중앙에 폭 4, 높이 8짜리 돌출부 추가
+    // (x=106, y=12)은 대략 본체 중앙 높이 기준으로 계산됨
+    lv_canvas_draw_rect(canvas, 106, 12, 4, 8, &rect_dsc);
+
+    /* ───────────────────────────────
+     * 2. 내부 검정 공백 (흰색 틀 안쪽 공간)
+     * ─────────────────────────────── */
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_color = lv_color_hex(0x000000);  // 검정색 내부
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.radius = 6;
     lv_canvas_draw_rect(canvas, 4, 2, 98, 28, &rect_dsc);
 
-    // 3. 어두운 배경
+    /* ───────────────────────────────
+     * 3. 어두운 배경 (레벨 채움 전 바탕)
+     * ─────────────────────────────── */
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = battery_color_dark(level);
+    rect_dsc.bg_color = battery_color_dark(level);  // 배터리 단계별 어두운 색
     rect_dsc.bg_opa = LV_OPA_COVER;
     rect_dsc.radius = 3;
+    // 실제 배터리 본체 내부 영역
     lv_canvas_draw_rect(canvas, 8, 6, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
 
-    // 4. 밝은 채움
+    /* ───────────────────────────────
+     * 4. 밝은 채움 (실제 충전량)
+     * ─────────────────────────────── */
     if (level > 0) {
         uint8_t width = (level > 100 ? 100 : level);
         uint8_t pixel_width = (uint8_t)((BATTERY_WIDTH * width) / 100);
 
         lv_draw_rect_dsc_init(&rect_dsc);
-        rect_dsc.bg_color = battery_color(level);
+        rect_dsc.bg_color = battery_color(level);  // 단계별 밝은 색상
         rect_dsc.bg_opa = LV_OPA_COVER;
         rect_dsc.radius = 3;
         lv_canvas_draw_rect(canvas, 8, 6, pixel_width, BATTERY_HEIGHT, &rect_dsc);
     }
 }
+
 
 // 배터리 심볼 + 레이블 업데이트
 static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
