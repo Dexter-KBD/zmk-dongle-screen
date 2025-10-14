@@ -189,7 +189,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     lv_obj_set_size(widget->obj, container_width, 40);
 
     // 화면 상단 중앙에 배치
-    lv_obj_align(widget->obj, LV_ALIGN_TOP_MID, 0, 0);
+    lv_obj_align(widget->obj, LV_ALIGN_TOP_MID, 10, 0);
 
     // 전체 캔버스 폭 계산 (중앙 기준 배치용)
     int total_width = canvas_count * BATTERY_WIDTH + (canvas_count - 1) * canvas_spacing;
