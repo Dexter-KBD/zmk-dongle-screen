@@ -141,33 +141,26 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    // ✅ 밝은 글자
-    lv_obj_set_style_text_color(label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
-    lv_obj_set_style_text_font(label, &NerdFonts_Regular_20, 0);
-
-    // 🖤 그림자 글자
-    lv_obj_set_style_text_color(label_shadow, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_text_font(label_shadow, &NerdFonts_Regular_20, 0);
-
-    // 💡 텍스트 설정
+    // 💡 텍스트 설정 (그림자 → 흰색 순으로)
     if (state.level < 1) {
-        lv_label_set_text(label, "sleep");
         lv_label_set_text(label_shadow, "sleep");
+        lv_label_set_text(label, "sleep");
     } else {
-        lv_label_set_text_fmt(label, "%u", state.level);
         lv_label_set_text_fmt(label_shadow, "%u", state.level);
+        lv_label_set_text_fmt(label, "%u", state.level);
     }
 
     // 📌 위치: 그림자는 오른쪽 아래로 2px 이동
     lv_obj_align(label_shadow, LV_ALIGN_CENTER, 2, 2);
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 
+    // 🔄 표시 갱신
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
-    lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_move_foreground(label);
     lv_obj_clear_flag(label_shadow, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(label_shadow);
+    lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_move_foreground(label);
 }
 
 // 🔹 이벤트에서 배터리 상태 가져오기 (Peripheral)
@@ -227,17 +220,17 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
 
-        // 🔹 밝은 숫자 레이블
-        lv_obj_t *battery_label = lv_label_create(image_canvas);
-        lv_obj_set_style_text_font(battery_label, &NerdFonts_Regular_20, 0);
-        lv_obj_set_style_text_color(battery_label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
-        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
-
-        // 🖤 그림자 레이블
+        // 🖤 그림자 레이블 (먼저 생성 → 뒤쪽)
         lv_obj_t *battery_label_shadow = lv_label_create(image_canvas);
         lv_obj_set_style_text_font(battery_label_shadow, &NerdFonts_Regular_20, 0);
         lv_obj_set_style_text_color(battery_label_shadow, lv_color_hex(0x000000), 0);
         lv_obj_align(battery_label_shadow, LV_ALIGN_CENTER, 2, 2);
+
+        // 🤍 밝은 숫자 레이블 (나중 생성 → 위쪽)
+        lv_obj_t *battery_label = lv_label_create(image_canvas);
+        lv_obj_set_style_text_font(battery_label, &NerdFonts_Regular_20, 0);
+        lv_obj_set_style_text_color(battery_label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
+        lv_obj_align(battery_label, LV_ALIGN_CENTER, 0, 0);
 
         // 🔧 캔버스 배치
         int x_offset = i * (BATTERY_WIDTH + canvas_spacing) - total_width / 2 + BATTERY_WIDTH / 2;
@@ -248,7 +241,11 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         lv_obj_add_flag(battery_label_shadow, LV_OBJ_FLAG_HIDDEN);
 
         // 🔹 구조체에 저장
-        battery_objects[i] = (struct battery_object){ .symbol = image_canvas, .label = battery_label, .label_shadow = battery_label_shadow };
+        battery_objects[i] = (struct battery_object){
+            .symbol = image_canvas,
+            .label = battery_label,
+            .label_shadow = battery_label_shadow
+        };
     }
 
     sys_slist_append(&widgets, &widget->node);
