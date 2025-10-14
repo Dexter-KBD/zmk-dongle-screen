@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include "battery_status.h"
 #include "../brightness.h"
 
-// 커스텀 폰트 선언 (너드20)
+// 커스텀 폰트 선언
 LV_FONT_DECLARE(NerdFonts_Regular_20);
 
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
@@ -91,15 +91,15 @@ static void draw_battery(lv_obj_t *canvas, uint8_t level) {
 
     // +극 돌출부
     lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
+    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);  // 흰색 막대
     rect_dsc.bg_opa = LV_OPA_COVER;
     lv_canvas_draw_rect(canvas, 113, 10, 3, 12, &rect_dsc);
 
-    // 오른쪽 둥근 느낌 주기 (검은 점)
+    // 오른쪽 둥근 느낌 주기 (검은 점으로 마무리)
     lv_color_t black = lv_color_hex(0x000000);
-    lv_canvas_set_px(canvas, 115, 10, black);
-    lv_canvas_set_px(canvas, 115, 21, black);
-
+    lv_canvas_set_px(canvas, 115, 10, black);  // 오른쪽 위 모서리
+    lv_canvas_set_px(canvas, 115, 21, black);  // 오른쪽 아래 모서리
+    
     // 내부 검정 공백
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.bg_color = lv_color_hex(0x000000);
@@ -137,28 +137,13 @@ static void set_battery_symbol(lv_obj_t *widget, struct battery_state state) {
 
     draw_battery(symbol, state.level);
 
-    // 🔹 텍스트 색상 설정 (흰색)
     lv_obj_set_style_text_color(label, lv_color_hex(BATTERY_TEXT_COLOR_HEX), 0);
-
-    // 🔹 폰트 적용 (NerdFonts 20)
     lv_obj_set_style_text_font(label, &NerdFonts_Regular_20, 0);
 
-    // 🔹 그림자 스타일 적용 (경계가 명확한 검정 테두리)
-    static lv_style_t outline_style;
-    lv_style_init(&outline_style);
-    lv_style_set_text_shadow_color(&outline_style, lv_color_hex(0x000000)); // 검정 그림자
-    lv_style_set_text_shadow_width(&outline_style, 2);  // 두께(경계 명확)
-    lv_style_set_text_shadow_ofs_x(&outline_style, 0);  // X 오프셋
-    lv_style_set_text_shadow_ofs_y(&outline_style, 0);  // Y 오프셋
-    lv_obj_add_style(label, &outline_style, 0);
-
-    // 🔹 레이블 텍스트
     if (state.level < 1) lv_label_set_text(label, "sleep");
     else lv_label_set_text_fmt(label, "%u", state.level);
 
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-
-    // 🔹 캔버스/레이블 표시
     lv_obj_clear_flag(symbol, LV_OBJ_FLAG_HIDDEN);
     lv_obj_move_foreground(symbol);
     lv_obj_clear_flag(label, LV_OBJ_FLAG_HIDDEN);
@@ -195,6 +180,7 @@ void battery_status_update_cb(struct battery_state state) {
 // ZMK 이벤트 구독
 ZMK_DISPLAY_WIDGET_LISTENER(widget_dongle_battery_status, struct battery_state,
                             battery_status_update_cb, battery_status_get_state)
+
 ZMK_SUBSCRIPTION(widget_dongle_battery_status, zmk_peripheral_battery_state_changed);
 
 #if IS_ENABLED(CONFIG_ZMK_DONGLE_DISPLAY_DONGLE_BATTERY)
