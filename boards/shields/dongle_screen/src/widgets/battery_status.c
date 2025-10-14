@@ -34,7 +34,7 @@ LV_FONT_DECLARE(NerdFonts_Regular_20);
 #define BATTERY_TEXT_COLOR_HEX 0xFFFFFF
 #define BATTERY_WIDTH 90
 #define BATTERY_HEIGHT 20
-#define CANVAS_WIDTH 112
+#define CANVAS_WIDTH 118
 #define CANVAS_HEIGHT 32
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
