@@ -66,18 +66,18 @@ static void init_peripheral_tracking(void) {
 // 🔹 배터리 색상 (밝음)
 static lv_color_t battery_color(uint8_t level) {
     if (level < 1) return lv_color_hex(0x5F5CE7);   // 💜 너무 낮음
-    if (level <= 15) return lv_color_hex(0xFA0D0B); // 🔴 낮음
-    if (level <= 30) return lv_color_hex(0xF98300); // 🟠 주황
-    if (level <= 40) return lv_color_hex(0xFFFF00); // 🟡 노랑
+    if (level <= 10) return lv_color_hex(0xFA0D0B); // 🔴 낮음
+    if (level <= 15) return lv_color_hex(0xF98300); // 🟠 주황
+    if (level <= 20) return lv_color_hex(0xFFFF00); // 🟡 노랑
     return lv_color_hex(0x00D500);                 // 🟢 충분
 }
 
 // 🔹 배터리 색상 (어두움, 배경용)
 static lv_color_t battery_color_dark(uint8_t level) {
     if (level < 1) return lv_color_hex(0x5F5CE7);
-    if (level <= 15) return lv_color_hex(0xB20908);
-    if (level <= 30) return lv_color_hex(0xC76A00);
-    if (level <= 40) return lv_color_hex(0xB5B500);
+    if (level <= 10) return lv_color_hex(0xB20908);
+    if (level <= 15) return lv_color_hex(0xC76A00);
+    if (level <= 20) return lv_color_hex(0xB5B500);
     return lv_color_hex(0x04910A);
 }
 
