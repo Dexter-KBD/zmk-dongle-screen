@@ -1,40 +1,35 @@
-# Include 디렉토리 설정
-zephyr_include_directories(include)
-zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
-zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/include)
+# 현재 보드 CMakeLists.txt 시작 부분
+zephyr_include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../include   # app/include 경로
+    ${CMAKE_CURRENT_SOURCE_DIR}/include              # dongle_screen/include 경로
+)
 
-# 라이브러리 정의
+# 라이브러리 선언
 zephyr_library()
 
-# SHIELD가 활성화된 경우
-if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
-
-    # 하위 디렉토리 추가
-    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/drivers/display)
-    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/modules/lvgl)
-
-    # Caps Word 기능이 활성화된 경우
-    if(CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED)
-        # 실제 파일 경로에 맞게 수정
-        zephyr_library_sources(
-            boards/shields/dongle_screen/src/behaviors/behavior_caps_word.c
-        )
-
-        # 헤더 전용 소스 파일 등록
-        set_source_files_properties(
-            ${APPLICATION_SOURCE_DIR}/src/behaviors/behavior_caps_word.c
-            TARGET_DIRECTORY app
-            PROPERTIES HEADER_FILE_ONLY ON
-        )
-        target_sources(app PRIVATE src/behaviors/behavior_caps_word.c)
-    endif()
-
-    # 기타 이벤트 소스 등록
+# caps word behavior 사용 시
+if(CONFIG_DT_HAS_ZMK_BEHAVIOR_CAPS_WORD_ENABLED)
     zephyr_library_sources(
-        boards/shields/dongle_screen/src/events/split_central_status_changed.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/behaviors/behavior_caps_word.c
     )
-    zephyr_library_sources(
-        boards/shields/dongle_screen/src/split/bluetooth/central_status_changed_observer.c
-    )
-
 endif()
+
+# 기타 이벤트 소스 추가
+zephyr_library_sources(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/widgets/mod_status.c
+)
+zephyr_library_sources(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/widgets/battery_status.c
+)
+zephyr_library_sources(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/widgets/layer_status.c
+)
+zephyr_library_sources(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/widgets/output_status.c
+)
+zephyr_library_sources(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/brightness.c
+)
+zephyr_library_sources(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../boards/shields/dongle_screen/src/widgets/wpm_status.c
+)
