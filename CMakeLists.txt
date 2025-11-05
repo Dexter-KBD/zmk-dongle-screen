@@ -1,5 +1,6 @@
 zephyr_include_directories(include)
 zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
+zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/include)
 zephyr_library()
 
 if(CONFIG_SHIELD_PROSPECTOR_ADAPTER)
