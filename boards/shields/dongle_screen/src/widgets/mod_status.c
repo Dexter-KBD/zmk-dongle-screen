@@ -6,6 +6,7 @@
 #include <lvgl.h>
 #include "mod_status.h"
 #include <fonts.h> // LV_FONT_DECLARE용 포함
+#include "sf_symbols.h" // Caps Word 심볼 사용
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -39,23 +40,23 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
 
     // 모디 상태별 심볼 지정
     if (mods & (MOD_LCTL | MOD_RCTL))
-        syms[n++] = "󰘴"; // Control
+        syms[n++] = SF_SYMBOL_CONTROL; // Control
     if (mods & (MOD_LSFT | MOD_RSFT))
-        syms[n++] = "󰘶"; // Shift
+        syms[n++] = SF_SYMBOL_SHIFT;   // Shift
     if (mods & (MOD_LALT | MOD_RALT))
-        syms[n++] = "󰘵"; // Alt
+        syms[n++] = SF_SYMBOL_ALT;     // Alt
     if (mods & (MOD_LGUI | MOD_RGUI))
 #if CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 1
-        syms[n++] = "󰌽"; // 시스템 1
+        syms[n++] = SF_SYMBOL_SYSTEM_1;
 #elif CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 2
-        syms[n++] = ""; // 시스템 2
+        syms[n++] = SF_SYMBOL_SYSTEM_2;
 #else
-        syms[n++] = "󰘳"; // 기본 시스템
+        syms[n++] = SF_SYMBOL_SYSTEM_DEFAULT;
 #endif
 
     // Caps Word 활성 시 커서 심볼 추가
     if (caps_word_active)
-        syms[n++] = "󰌶"; // Caps Word 심볼
+        syms[n++] = SF_SYMBOL_CURSOR_IBEAM; // Caps Word 심볼
 
     // 심볼들을 공백으로 구분하여 text 배열에 복사
     for (int i = 0; i < n; ++i) {
@@ -83,7 +84,7 @@ static void mod_status_timer_cb(struct k_timer *timer)
 static struct k_timer mod_status_timer;
 
 //////////////////////////
-// Caps Word 이벤트 핸들러 (항상 활성)
+// Caps Word 이벤트 핸들러
 static int caps_word_listener(const zmk_event_t *eh)
 {
     const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
