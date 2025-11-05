@@ -1,109 +1,108 @@
 #include <zephyr/kernel.h>
-#include <zmk/event_manager.h>
-#include <zmk/events/modifiers_state_changed.h>
-#include <zmk/caps_word.h>          // ✅ Caps Word 상태 확인용
-#include <zmk/keys.h>
-#include <zmk/keymap.h>
-#include <zmk/display.h>
-#include <zmk/display/status_screen.h>
+#include <zephyr/logging/log.h>
+#include <zmk/hid.h>
 #include <lvgl.h>
+#include "mod_status.h"
+#include <fonts.h> // LV_FONT_DECLARE용 포함
 
-// ========================================================
-// 구조체 및 위젯 핸들
-// ========================================================
-static lv_obj_t *mod_label;
-static lv_obj_t *caps_word_label;
+LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-// ========================================================
-// 헬퍼 함수: modifier 상태 텍스트 생성
-// ========================================================
-static void update_mod_text(void) {
-    zmk_mod_flags_t mods = zmk_mod_flags();
-
-    // 초기화
-    static char mod_text[32];
-    mod_text[0] = '\0';
-
-    // 각 modifier 상태를 확인
-    if (mods & (ZMK_MOD_LSFT | ZMK_MOD_RSFT)) {
-        strcat(mod_text, "⇧ ");
-    }
-    if (mods & (ZMK_MOD_LCTL | ZMK_MOD_RCTL)) {
-        strcat(mod_text, "⌃ ");
-    }
-    if (mods & (ZMK_MOD_LALT | ZMK_MOD_RALT)) {
-        strcat(mod_text, "⎇ ");
-    }
-    if (mods & (ZMK_MOD_LGUI | ZMK_MOD_RGUI)) {
-        strcat(mod_text, "⌘ ");
-    }
-
-    // 표시
-    if (strlen(mod_text) == 0) {
-        strcpy(mod_text, "-");
-    }
-
-    lv_label_set_text(mod_label, mod_text);
+//////////////////////////
+// 모디파이어별 색상 결정 함수
+// 각 키보드 모디 상태에 따라 텍스트 색상을 반환
+static lv_color_t mod_color(uint8_t mods) {
+    if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LALT | MOD_RALT)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LGUI | MOD_RGUI)) return lv_color_hex(0x0383E6);  // 윈도우 색
+    return lv_color_black(); // 기본 색상
 }
+//////////////////////////
 
-// ========================================================
-// Caps Word 상태 업데이트
-// ========================================================
-static void update_caps_word_indicator(void) {
-    bool caps_active = zmk_caps_word_get_state();  // ✅ Caps Word 상태 직접 읽기
+//////////////////////////
+// 모디 상태 업데이트 함수
+// 키보드 HID 레포트를 읽어 현재 모디 상태를 심볼과 색상으로 갱신
+static void update_mod_status(struct zmk_widget_mod_status *widget)
+{
+    uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers; // 현재 모디 상태 읽기
+    char text[32] = ""; // 출력 문자열 버퍼
+    int idx = 0;
 
-    if (caps_active) {
-        lv_obj_set_style_text_color(caps_word_label, lv_color_hex(0x00FFE5), 0); // 밝은 시안색
-    } else {
-        lv_obj_set_style_text_color(caps_word_label, lv_color_hex(0x303030), 0); // 어두운 회색
+    // 심볼 임시 배열
+    char *syms[4];
+    int n = 0;
+
+    // 모디 상태별 심볼 지정
+    if (mods & (MOD_LCTL | MOD_RCTL))
+        syms[n++] = "󰘴"; // Control
+    if (mods & (MOD_LSFT | MOD_RSFT))
+        syms[n++] = "󰘶"; // Shift
+    if (mods & (MOD_LALT | MOD_RALT))
+        syms[n++] = "󰘵"; // Alt
+    if (mods & (MOD_LGUI | MOD_RGUI))
+    // 시스템 아이콘 설정에 따른 심볼
+#if CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 1
+        syms[n++] = "󰌽"; // 시스템 1
+#elif CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 2
+        syms[n++] = ""; // 시스템 2
+#else
+        syms[n++] = "󰘳"; // 기본 시스템
+#endif
+
+    // 심볼들을 공백으로 구분하여 text 배열에 복사
+    for (int i = 0; i < n; ++i) {
+        if (i > 0)
+            idx += snprintf(&text[idx], sizeof(text) - idx, " ");
+        idx += snprintf(&text[idx], sizeof(text) - idx, "%s", syms[i]);
     }
+
+    // LVGL 라벨에 텍스트 적용
+    lv_label_set_text(widget->label, idx ? text : "");
+    // LVGL 라벨에 색상 적용
+    lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
 }
+//////////////////////////
 
-// ========================================================
-// 전체 상태 업데이트
-// ========================================================
-static void update_mod_status(void) {
-    update_mod_text();
-    update_caps_word_indicator();
+//////////////////////////
+// 모디 상태 타이머 콜백
+// 주기적으로 update_mod_status 호출
+static void mod_status_timer_cb(struct k_timer *timer)
+{
+    struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
+    update_mod_status(widget);
 }
+//////////////////////////
 
-// ========================================================
-// LVGL 위젯 초기화
-// ========================================================
-static void init_mod_status(lv_obj_t *parent) {
-    // modifier 표시용 라벨
-    mod_label = lv_label_create(parent);
-    lv_obj_set_style_text_font(mod_label, &lv_font_montserrat_20, 0);
-    lv_obj_align(mod_label, LV_ALIGN_TOP_LEFT, 4, 0);
+static struct k_timer mod_status_timer;
 
-    // caps word 표시용 라벨
-    caps_word_label = lv_label_create(parent);
-    lv_label_set_text(caps_word_label, LV_SYMBOL_KEYBOARD " CW");
-    lv_obj_set_style_text_font(caps_word_label, &lv_font_montserrat_20, 0);
-    lv_obj_align(caps_word_label, LV_ALIGN_TOP_RIGHT, -8, 0);
+//////////////////////////
+// 모디 상태 위젯 초기화
+// parent 객체에 LVGL 객체 생성 후 타이머 시작
+int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent)
+{
+    // LVGL 컨테이너 객체 생성
+    widget->obj = lv_obj_create(parent);
+    lv_obj_set_size(widget->obj, 180, 40);
 
-    update_mod_status();
-}
+    // LVGL 라벨 객체 생성
+    widget->label = lv_label_create(widget->obj);
+    lv_obj_align(widget->label, LV_ALIGN_CENTER, 0, 10);
+    lv_label_set_text(widget->label, "-"); // 초기 텍스트
+    lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0); // NerdFont 설정
 
-// ========================================================
-// 이벤트 리스너 (modifier 바뀔 때 호출됨)
-// ========================================================
-static int on_modifiers_state_changed(const zmk_event_t *eh) {
-    update_mod_status();
+    // 타이머 초기화 및 주기적 업데이트
+    k_timer_init(&mod_status_timer, mod_status_timer_cb, NULL);
+    k_timer_user_data_set(&mod_status_timer, widget);
+    k_timer_start(&mod_status_timer, K_MSEC(100), K_MSEC(100));
+
     return 0;
 }
+//////////////////////////
 
-ZMK_LISTENER(mod_status, on_modifiers_state_changed);
-ZMK_SUBSCRIPTION(mod_status, zmk_modifiers_state_changed);
-
-// ========================================================
-// 초기화 등록
-// ========================================================
-static int mod_status_init(const struct device *dev) {
-    ARG_UNUSED(dev);
-    lv_obj_t *screen = zmk_display_status_screen();
-    init_mod_status(screen);
-    return 0;
+//////////////////////////
+// LVGL 객체 반환 함수
+lv_obj_t *zmk_widget_mod_status_obj(struct zmk_widget_mod_status *widget)
+{
+    return widget->obj;
 }
-
-SYS_INIT(mod_status_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+//////////////////////////
