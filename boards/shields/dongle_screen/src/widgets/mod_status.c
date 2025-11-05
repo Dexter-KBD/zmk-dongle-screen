@@ -6,7 +6,6 @@
 #include <lvgl.h>
 #include "mod_status.h"
 #include <fonts.h>      // LV_FONT_DECLARE용 포함
-#include <sf_symbols.h> // Caps Word 심볼용
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
@@ -22,8 +21,16 @@ static lv_color_t mod_color(uint8_t mods) {
 //////////////////////////
 
 //////////////////////////
+// C 파일 내부용 확장 구조체
+struct mod_status_widget_internal {
+    struct zmk_widget_mod_status base; // 기존 구조체
+    lv_obj_t *caps_label;              // Caps Word 라벨
+};
+//////////////////////////
+
+//////////////////////////
 // 모디 상태 업데이트
-static void update_mod_status(struct zmk_widget_mod_status *widget)
+static void update_mod_status(struct mod_status_widget_internal *widget)
 {
     uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers;
     char text[32] = "";
@@ -50,16 +57,16 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
         idx += snprintf(&text[idx], sizeof(text) - idx, "%s", syms[i]);
     }
 
-    lv_label_set_text(widget->label, idx ? text : "");
-    lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
+    lv_label_set_text(widget->base.label, idx ? text : "");
+    lv_obj_set_style_text_color(widget->base.label, mod_color(mods), 0);
 }
 //////////////////////////
 
 //////////////////////////
 // Caps Word 상태 표시
-static void update_caps_word_status(struct zmk_widget_mod_status *widget, bool active) {
+static void update_caps_word_status(struct mod_status_widget_internal *widget, bool active) {
     if (active) {
-        lv_label_set_text(widget->caps_label, SF_SYMBOL_CHARACTER_CURSOR_IBEAM); // Caps Word 심볼
+        lv_label_set_text(widget->caps_label, "CW"); // Caps Word 심볼
         lv_obj_set_style_text_color(widget->caps_label, lv_color_hex(0x00FFE5), 0);
     } else {
         lv_label_set_text(widget->caps_label, "");
@@ -72,7 +79,7 @@ static void caps_word_event_listener(const zmk_event_t *eh) {
     const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
     if (!ev) return;
 
-    struct zmk_widget_mod_status *widget = k_timer_user_data_get(&mod_status_timer);
+    struct mod_status_widget_internal *widget = k_timer_user_data_get(&mod_status_timer);
     if (!widget) return;
 
     update_caps_word_status(widget, ev->active);
@@ -83,7 +90,7 @@ ZMK_SUBSCRIPTION(widget_mod_status_caps_word, zmk_caps_word_state_changed);
 //////////////////////////
 // 모디 상태 타이머 콜백
 static void mod_status_timer_cb(struct k_timer *timer) {
-    struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
+    struct mod_status_widget_internal *widget = k_timer_user_data_get(timer);
     if (!widget) return;
     update_mod_status(widget);
 }
@@ -93,23 +100,30 @@ static struct k_timer mod_status_timer;
 
 //////////////////////////
 // 위젯 초기화
-int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent)
+int zmk_widget_mod_status_init(struct zmk_widget_mod_status *base_widget, lv_obj_t *parent)
 {
-    // 컨테이너 객체
-    widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 180, 60);
+    static struct mod_status_widget_internal *widget;
+
+    widget = k_malloc(sizeof(*widget));
+    if (!widget) return -1;
+
+    widget->base = *base_widget;
+
+    // 컨테이너
+    widget->base.obj = lv_obj_create(parent);
+    lv_obj_set_size(widget->base.obj, 180, 60);
 
     // 모디 라벨
-    widget->label = lv_label_create(widget->obj);
-    lv_obj_align(widget->label, LV_ALIGN_TOP_MID, 0, 0);
-    lv_label_set_text(widget->label, "-");
-    lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
+    widget->base.label = lv_label_create(widget->base.obj);
+    lv_obj_align(widget->base.label, LV_ALIGN_TOP_MID, 0, 0);
+    lv_label_set_text(widget->base.label, "-");
+    lv_obj_set_style_text_font(widget->base.label, &NerdFonts_Regular_40, 0);
 
     // Caps Word 라벨
-    widget->caps_label = lv_label_create(widget->obj);
+    widget->caps_label = lv_label_create(widget->base.obj);
     lv_obj_align(widget->caps_label, LV_ALIGN_BOTTOM_MID, 0, 0);
     lv_label_set_text(widget->caps_label, "");
-    lv_obj_set_style_text_font(widget->caps_label, &SF_Compact_Text_Bold_32, 0);
+    lv_obj_set_style_text_font(widget->caps_label, &NerdFonts_Regular_40, 0);
 
     // 모디 상태 타이머 초기화
     k_timer_init(&mod_status_timer, mod_status_timer_cb, NULL);
