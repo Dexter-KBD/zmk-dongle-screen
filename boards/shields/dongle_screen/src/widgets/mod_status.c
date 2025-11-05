@@ -1,51 +1,52 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zmk/hid.h>
-#include <zmk/events/caps_word_state_changed.h>
 #include <zmk/event_manager.h>
+#include <zmk/events/caps_word_state_changed.h>
 #include <lvgl.h>
 #include "mod_status.h"
-#include <fonts.h>      // LV_FONT_DECLARE용 포함
+#include <fonts.h>
+#include <sf_symbols.h> // Caps Word 심볼용
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 //////////////////////////
-// 모디파이어별 색상 결정 함수
+// 모디파이어별 색상 결정
 static lv_color_t mod_color(uint8_t mods) {
-    if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);  // 민트
-    if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);  // 민트
-    if (mods & (MOD_LALT | MOD_RALT)) return lv_color_hex(0xA8E6CF);  // 민트
-    if (mods & (MOD_LGUI | MOD_RGUI)) return lv_color_hex(0x0383E6);  // 윈도우 색
-    return lv_color_black(); // 기본 색상
+    if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);
+    if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);
+    if (mods & (MOD_LALT | MOD_RALT)) return lv_color_hex(0xA8E6CF);
+    if (mods & (MOD_LGUI | MOD_RGUI)) return lv_color_hex(0x0383E6);
+    return lv_color_black();
 }
-//////////////////////////
 
 //////////////////////////
-// 내부 확장 구조체
-struct mod_status_widget_internal {
-    struct zmk_widget_mod_status base; // 기존 구조체
-    lv_obj_t *caps_label;              // Caps Word 라벨
+// Caps Word 상태 구조체
+struct caps_word_state {
+    bool active;
 };
 
-static struct mod_status_widget_internal widget_instance; // 정적 할당
-static struct mod_status_widget_internal *global_widget;  // 이벤트용 포인터
-static struct k_timer mod_status_timer;                  // 모디 상태 타이머
-//////////////////////////
+// Caps Word 상태 라벨 색상 적용
+static void caps_word_set_active(lv_obj_t *label, struct caps_word_state state) {
+    if (state.active) {
+        lv_obj_set_style_text_color(label, lv_color_hex(0x00ffe5), LV_PART_MAIN);
+    } else {
+        lv_obj_set_style_text_color(label, lv_color_hex(0x202020), LV_PART_MAIN);
+    }
+}
 
-//////////////////////////
-// 모디 상태 업데이트
-static void update_mod_status(struct mod_status_widget_internal *widget)
-{
+// 모디 상태 + Caps Word 업데이트
+static void update_mod_status(struct zmk_widget_mod_status *widget) {
     uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers;
     char text[32] = "";
     int idx = 0;
 
+    // 모디 심볼 지정
     char *syms[4];
     int n = 0;
-
-    if (mods & (MOD_LCTL | MOD_RCTL)) syms[n++] = "󰘴"; // Ctrl
-    if (mods & (MOD_LSFT | MOD_RSFT)) syms[n++] = "󰘶"; // Shift
-    if (mods & (MOD_LALT | MOD_RALT)) syms[n++] = "󰘵"; // Alt
+    if (mods & (MOD_LCTL | MOD_RCTL)) syms[n++] = "󰘴";
+    if (mods & (MOD_LSFT | MOD_RSFT)) syms[n++] = "󰘶";
+    if (mods & (MOD_LALT | MOD_RALT)) syms[n++] = "󰘵";
     if (mods & (MOD_LGUI | MOD_RGUI))
 #if CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 1
         syms[n++] = "󰌽";
@@ -61,84 +62,70 @@ static void update_mod_status(struct mod_status_widget_internal *widget)
         idx += snprintf(&text[idx], sizeof(text) - idx, "%s", syms[i]);
     }
 
-    lv_label_set_text(widget->base.label, idx ? text : "");
-    lv_obj_set_style_text_color(widget->base.label, mod_color(mods), 0);
-}
-//////////////////////////
+    lv_label_set_text(widget->label, idx ? text : "");
+    lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
 
-//////////////////////////
-// Caps Word 상태 표시
-static void update_caps_word_status(struct mod_status_widget_internal *widget, bool active) {
-    if (active) {
-        lv_label_set_text(widget->caps_label, "CW"); // Caps Word 심볼
-        lv_obj_set_style_text_color(widget->caps_label, lv_color_hex(0x00FFE5), 0);
-    } else {
-        lv_label_set_text(widget->caps_label, "");
-        lv_obj_set_style_text_color(widget->caps_label, lv_color_hex(0x202020), 0);
+    // Caps Word 라벨 업데이트
+    if (widget->caps_label) {
+        struct caps_word_state state = widget->caps_word;
+        caps_word_set_active(widget->caps_label, state);
+        lv_label_set_text(widget->caps_label,
+                          state.active ? SF_SYMBOL_CHARACTER_CURSOR_IBEAM : "");
     }
 }
-//////////////////////////
 
 //////////////////////////
-// Caps Word 이벤트 리스너
-static void caps_word_event_listener(const zmk_event_t *eh) {
-    if (!global_widget) return;
-
-    const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
-    if (!ev) return;
-
-    update_caps_word_status(global_widget, ev->active);
-}
-ZMK_SUBSCRIPTION(widget_mod_status_caps_word, zmk_caps_word_state_changed);
-//////////////////////////
-
-//////////////////////////
-// 모디 상태 타이머 콜백
+// 주기적 타이머 콜백
 static void mod_status_timer_cb(struct k_timer *timer) {
-    if (!global_widget) return;
-    update_mod_status(global_widget);
+    struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
+    update_mod_status(widget);
 }
+
+static struct k_timer mod_status_timer;
+
 //////////////////////////
+// Caps Word 이벤트 처리
+static void caps_word_event_listener(const zmk_event_t *eh) {
+    struct zmk_widget_mod_status *widget = k_timer_user_data_get(&mod_status_timer);
+    const struct zmk_caps_word_state_changed *ev =
+        as_zmk_caps_word_state_changed(eh);
+    widget->caps_word.active = ev->active;
+}
+
+ZMK_SUBSCRIPTION(widget_mod_status_caps_word, zmk_caps_word_state_changed);
 
 //////////////////////////
 // 위젯 초기화
-int zmk_widget_mod_status_init(struct zmk_widget_mod_status *base_widget, lv_obj_t *parent)
-{
-    struct mod_status_widget_internal *widget = &widget_instance;
-    widget->base = *base_widget;
+int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent) {
+    // 컨테이너 생성
+    widget->obj = lv_obj_create(parent);
+    lv_obj_set_size(widget->obj, 180, 40);
 
-    // 컨테이너
-    widget->base.obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->base.obj, 180, 60);
+    // 모디 라벨 생성
+    widget->label = lv_label_create(widget->obj);
+    lv_obj_align(widget->label, LV_ALIGN_CENTER, 0, 0);
+    lv_label_set_text(widget->label, "-");
+    lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
 
-    // 모디 라벨
-    widget->base.label = lv_label_create(widget->base.obj);
-    lv_obj_align(widget->base.label, LV_ALIGN_TOP_MID, 0, 0);
-    lv_label_set_text(widget->base.label, "-");
-    lv_obj_set_style_text_font(widget->base.label, &NerdFonts_Regular_40, 0);
-
-    // Caps Word 라벨
-    widget->caps_label = lv_label_create(widget->base.obj);
-    lv_obj_align(widget->caps_label, LV_ALIGN_BOTTOM_MID, 0, 0);
+    // Caps Word 라벨 생성
+    widget->caps_label = lv_label_create(widget->obj);
+    lv_obj_align(widget->caps_label, LV_ALIGN_CENTER, 0, 10);
     lv_label_set_text(widget->caps_label, "");
-    lv_obj_set_style_text_font(widget->caps_label, &NerdFonts_Regular_40, 0);
+    lv_obj_set_style_text_font(widget->caps_label, &SF_Compact_Text_Bold_32, 0);
 
-    // 전역 포인터 등록
-    global_widget = widget;
+    // 초기 Caps Word 상태
+    widget->caps_word.active = false;
 
-    // 모디 상태 타이머 초기화
+    // 타이머 시작
     k_timer_init(&mod_status_timer, mod_status_timer_cb, NULL);
     k_timer_user_data_set(&mod_status_timer, widget);
     k_timer_start(&mod_status_timer, K_MSEC(100), K_MSEC(100));
 
     return 0;
 }
-//////////////////////////
 
 //////////////////////////
 // LVGL 객체 반환
-lv_obj_t *zmk_widget_mod_status_obj(struct zmk_widget_mod_status *widget)
-{
+lv_obj_t *zmk_widget_mod_status_obj(struct zmk_widget_mod_status *widget) {
     return widget->obj;
 }
-//////////////////////////
