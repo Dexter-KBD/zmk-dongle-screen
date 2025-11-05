@@ -9,9 +9,14 @@
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 //////////////////////////
-// Caps Word 캐스팅 매크로 (독립 구현)
+// Caps Word 캐스팅 매크로
 //////////////////////////
 #define as_zmk_caps_word_state_changed(eh) ((const struct zmk_caps_word_state_changed *)(eh))
+
+//////////////////////////
+// 이벤트 심볼 선언 (Prospector 없이 필요)
+//////////////////////////
+ZMK_EVENT_DECLARE(zmk_caps_word_state_changed);
 
 //////////////////////////
 // 모디파이어별 색상 결정 함수
@@ -28,8 +33,8 @@ static lv_color_t mod_color(uint8_t mods) {
 // 전역 상태 구조체
 //////////////////////////
 struct mod_caps_state {
-    bool caps_word_active; // Caps Word 활성화 여부
-    uint8_t mods;          // Modifier 상태
+    bool caps_word_active;
+    uint8_t mods;
 };
 
 static struct mod_caps_state current_state = {
@@ -66,27 +71,24 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
     char *syms[5];
     int n = 0;
 
-    // 모디 상태별 심볼 표시
     if (mods & (MOD_LCTL | MOD_RCTL))
-        syms[n++] = "󰘴"; // Control
+        syms[n++] = "󰘴";
     if (mods & (MOD_LSFT | MOD_RSFT))
-        syms[n++] = "󰘶"; // Shift
+        syms[n++] = "󰘶";
     if (mods & (MOD_LALT | MOD_RALT))
-        syms[n++] = "󰘵"; // Alt
+        syms[n++] = "󰘵";
     if (mods & (MOD_LGUI | MOD_RGUI))
 #if CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 1
-        syms[n++] = "󰌽"; // 시스템1
+        syms[n++] = "󰌽";
 #elif CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 2
-        syms[n++] = ""; // 시스템2
+        syms[n++] = "";
 #else
-        syms[n++] = "󰘳"; // 기본시스템
+        syms[n++] = "󰘳";
 #endif
 
-    // Caps Word 활성화 시 🅰 추가
     if (current_state.caps_word_active)
         syms[n++] = "🅰";
 
-    // 텍스트 결합
     for (int i = 0; i < n; ++i) {
         if (i > 0)
             idx += snprintf(&text[idx], sizeof(text) - idx, " ");
@@ -94,8 +96,6 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
     }
 
     lv_label_set_text(widget->label, idx ? text : "");
-
-    // Caps Word가 켜졌으면 민트 강조, 아니면 모디 기준 색
     if (current_state.caps_word_active)
         lv_obj_set_style_text_color(widget->label, lv_color_hex(0x00FFE5), 0);
     else
@@ -103,7 +103,7 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
 }
 
 //////////////////////////
-// 타이머 콜백 (주기적 업데이트)
+// 타이머 콜백
 //////////////////////////
 static void mod_status_timer_cb(struct k_timer *timer)
 {
