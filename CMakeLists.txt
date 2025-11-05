@@ -1,28 +1,10 @@
-# Dongle shield library
+zephyr_include_directories(include)
 zephyr_library()
 
-# Include 디렉토리 설정
-zephyr_include_directories(
-    ${ZEPHYR_BASE}/include                        # Zephyr 기본 include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include           # dongle_screen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../../include  # zmk/app/include (zmk/events 등)
-)
+if(CONFIG_SHIELD_DONGLE_SCREEN)
 
-# Behaviors
-zephyr_library_sources(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/behaviors/behavior_caps_word.c
-)
+        add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/drivers/display)
+        add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/modules/lvgl)
 
-# Widgets
-zephyr_library_sources(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/mod_status.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/battery_status.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/layer_status.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/output_status.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/wpm_status.c
-)
 
-# 기타 소스
-zephyr_library_sources(
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/brightness.c
-)
+endif()
