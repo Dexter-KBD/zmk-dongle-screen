@@ -21,13 +21,14 @@ static lv_color_t mod_color(uint8_t mods) {
 //////////////////////////
 
 //////////////////////////
-// C 파일 내부용 확장 구조체
+// 내부 확장 구조체
 struct mod_status_widget_internal {
     struct zmk_widget_mod_status base; // 기존 구조체
     lv_obj_t *caps_label;              // Caps Word 라벨
 };
 
-static struct mod_status_widget_internal *global_widget; // 이벤트용 전역 포인터
+static struct mod_status_widget_internal widget_instance; // 정적 할당
+static struct mod_status_widget_internal *global_widget;  // 이벤트용 포인터
 static struct k_timer mod_status_timer;                  // 모디 상태 타이머
 //////////////////////////
 
@@ -103,11 +104,7 @@ static void mod_status_timer_cb(struct k_timer *timer) {
 // 위젯 초기화
 int zmk_widget_mod_status_init(struct zmk_widget_mod_status *base_widget, lv_obj_t *parent)
 {
-    static struct mod_status_widget_internal *widget;
-
-    widget = k_malloc(sizeof(*widget));
-    if (!widget) return -1;
-
+    struct mod_status_widget_internal *widget = &widget_instance;
     widget->base = *base_widget;
 
     // 컨테이너
@@ -126,16 +123,13 @@ int zmk_widget_mod_status_init(struct zmk_widget_mod_status *base_widget, lv_obj
     lv_label_set_text(widget->caps_label, "");
     lv_obj_set_style_text_font(widget->caps_label, &NerdFonts_Regular_40, 0);
 
-    // 전역 포인터 등록 (이벤트 및 타이머에서 접근)
+    // 전역 포인터 등록
     global_widget = widget;
 
     // 모디 상태 타이머 초기화
     k_timer_init(&mod_status_timer, mod_status_timer_cb, NULL);
     k_timer_user_data_set(&mod_status_timer, widget);
     k_timer_start(&mod_status_timer, K_MSEC(100), K_MSEC(100));
-
-    // Caps Word 이벤트 리스너 등록
-    widget_mod_status_caps_word_init();
 
     return 0;
 }
