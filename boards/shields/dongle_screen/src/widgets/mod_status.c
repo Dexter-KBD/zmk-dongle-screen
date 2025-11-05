@@ -1,7 +1,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zmk/hid.h>
-#include <zmk/events/caps_word_state_changed.h> // Caps Word 이벤트
+#include <zmk/events/caps_word_state_changed.h> // ✅ 이미 이벤트 선언 포함
 #include <lvgl.h>
 #include "mod_status.h"
 #include <fonts.h>
@@ -12,11 +12,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 // Caps Word 캐스팅 매크로
 //////////////////////////
 #define as_zmk_caps_word_state_changed(eh) ((const struct zmk_caps_word_state_changed *)(eh))
-
-//////////////////////////
-// 이벤트 심볼 선언 (Prospector 없이 필요)
-//////////////////////////
-ZMK_EVENT_DECLARE(zmk_caps_word_state_changed);
 
 //////////////////////////
 // 모디파이어별 색상 결정 함수
