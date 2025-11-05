@@ -34,7 +34,7 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
     int idx = 0;
 
     // 심볼 임시 배열
-    char *syms[4];
+    char *syms[5]; // 모디 + Caps Word
     int n = 0;
 
     // 모디 상태별 심볼 지정
@@ -53,9 +53,9 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
         syms[n++] = "󰘳"; // 기본 시스템
 #endif
 
-    // Caps Word 활성 시 커서 아이콘 추가
+    // Caps Word 활성 시 커서 심볼 추가
     if (caps_word_active)
-        syms[n++] = "󰌶"; // Caps Word 심볼 (원하시면 다른 심볼로 교체 가능)
+        syms[n++] = "󰌶"; // Caps Word 심볼
 
     // 심볼들을 공백으로 구분하여 text 배열에 복사
     for (int i = 0; i < n; ++i) {
@@ -83,7 +83,7 @@ static void mod_status_timer_cb(struct k_timer *timer)
 static struct k_timer mod_status_timer;
 
 //////////////////////////
-// Caps Word 이벤트 핸들러
+// Caps Word 이벤트 핸들러 (항상 활성)
 static int caps_word_listener(const zmk_event_t *eh)
 {
     const struct zmk_caps_word_state_changed *ev = as_zmk_caps_word_state_changed(eh);
