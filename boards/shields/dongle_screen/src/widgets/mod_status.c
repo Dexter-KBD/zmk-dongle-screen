@@ -1,8 +1,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zmk/hid.h>
-#include <zmk/keymap.h>
-#include <zmk/caps_word.h> // ✅ Caps Word 상태 확인용
 #include <lvgl.h>
 #include "mod_status.h"
 #include <fonts.h> // LV_FONT_DECLARE용 포함
@@ -12,10 +10,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 //////////////////////////
 // 모디파이어별 색상 결정 함수
 // 각 키보드 모디 상태에 따라 텍스트 색상을 반환
-static lv_color_t mod_color(uint8_t mods, bool caps_word_active) {
-    // Caps Word가 활성화되면 민트색 우선
-    if (caps_word_active) return lv_color_hex(0x00FFE5);
-
+static lv_color_t mod_color(uint8_t mods) {
     if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);  // 민트
     if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);  // 민트
     if (mods & (MOD_LALT | MOD_RALT)) return lv_color_hex(0xA8E6CF);  // 민트
@@ -29,16 +24,12 @@ static lv_color_t mod_color(uint8_t mods, bool caps_word_active) {
 // 키보드 HID 레포트를 읽어 현재 모디 상태를 심볼과 색상으로 갱신
 static void update_mod_status(struct zmk_widget_mod_status *widget)
 {
-    const struct zmk_hid_keyboard_report *report = zmk_hid_get_keyboard_report();
-    uint8_t mods = report ? report->body.modifiers : 0;
-
-    bool caps_word_active = zmk_caps_word_get_state(); // ✅ Caps Word 상태 가져오기
-
-    char text[48] = ""; // 출력 문자열 버퍼
+    uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers; // 현재 모디 상태 읽기
+    char text[32] = ""; // 출력 문자열 버퍼
     int idx = 0;
 
     // 심볼 임시 배열
-    const char *syms[5];
+    char *syms[4];
     int n = 0;
 
     // 모디 상태별 심볼 지정
@@ -58,10 +49,6 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
         syms[n++] = "󰘳"; // 기본 시스템
 #endif
 
-    // ✅ Caps Word 활성 시 🅰 추가
-    if (caps_word_active)
-        syms[n++] = "🅰";
-
     // 심볼들을 공백으로 구분하여 text 배열에 복사
     for (int i = 0; i < n; ++i) {
         if (i > 0)
@@ -70,10 +57,9 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
     }
 
     // LVGL 라벨에 텍스트 적용
-    lv_label_set_text(widget->label, idx ? text : "-");
-
+    lv_label_set_text(widget->label, idx ? text : "");
     // LVGL 라벨에 색상 적용
-    lv_obj_set_style_text_color(widget->label, mod_color(mods, caps_word_active), 0);
+    lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
 }
 //////////////////////////
 
