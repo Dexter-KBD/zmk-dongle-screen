@@ -1,12 +1,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zmk/hid.h>
-#include <zmk/events/caps_word_state_changed.h> // ✅ Caps Word 이벤트 감지용
+#include <zmk/events/caps_word_state_changed.h> // Caps Word 이벤트
 #include <lvgl.h>
 #include "mod_status.h"
 #include <fonts.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
+
+//////////////////////////
+// Caps Word 캐스팅 매크로 (독립 구현)
+//////////////////////////
+#define as_zmk_caps_word_state_changed(eh) ((const struct zmk_caps_word_state_changed *)(eh))
 
 //////////////////////////
 // 모디파이어별 색상 결정 함수
@@ -43,6 +48,7 @@ static int caps_word_state_listener(const zmk_event_t *eh) {
     }
     return 0;
 }
+
 ZMK_LISTENER(mod_status_caps_word_listener, caps_word_state_listener);
 ZMK_SUBSCRIPTION(mod_status_caps_word_listener, zmk_caps_word_state_changed);
 
@@ -76,7 +82,7 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
         syms[n++] = "󰘳"; // 기본시스템
 #endif
 
-    // ✅ Caps Word 활성화 시 🅰 추가
+    // Caps Word 활성화 시 🅰 추가
     if (current_state.caps_word_active)
         syms[n++] = "🅰";
 
@@ -88,7 +94,8 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
     }
 
     lv_label_set_text(widget->label, idx ? text : "");
-    // Caps Word가 켜졌으면 민트색 강조, 아니면 모디파이어 기준
+
+    // Caps Word가 켜졌으면 민트 강조, 아니면 모디 기준 색
     if (current_state.caps_word_active)
         lv_obj_set_style_text_color(widget->label, lv_color_hex(0x00FFE5), 0);
     else
