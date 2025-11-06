@@ -1,13 +1,13 @@
 #pragma once
 
 #include <lvgl.h>
-#include <zephyr/kernel.h>
-#include <zmk/events/keyboard_state_changed.h>
+#include <zmk/display.h>
 
-struct zmk_widget_mod_status {
+struct zmk_widget_mod_status
+{
     sys_snode_t node;
-    lv_obj_t *mod_label;
-    lv_obj_t *caps_label;
+    lv_obj_t *obj;
+    lv_obj_t *label;
 };
 
 int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent);
