@@ -72,7 +72,7 @@ static void mod_status_timer_cb(struct k_timer *timer)
 // Caps Word 업데이트
 static void caps_word_indicator_set_active(lv_obj_t *label, struct caps_word_indicator_state state) {
     if (state.active) {
-        lv_obj_set_style_text_color(label, lv_color_hex(0x00ffe5), LV_PART_MAIN);
+        lv_obj_set_style_text_color(label, lv_color_hex(0xffffff), LV_PART_MAIN);
     } else {
         lv_obj_set_style_text_color(label, lv_color_hex(0x202020), LV_PART_MAIN);
     }
@@ -104,11 +104,11 @@ ZMK_SUBSCRIPTION(widget_caps_word_indicator, zmk_caps_word_state_changed);
 int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent)
 {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 180, 140); // 전체 위젯 크기 조정
+    lv_obj_set_size(widget->obj, 180, 240); // 전체 위젯 크기 조정
 
     // 모디 레이블 (중앙 하단)
     widget->label = lv_label_create(widget->obj);
-    lv_obj_align(widget->label, LV_ALIGN_BOTTOM_MID, 0, -10); // 하단 중앙
+    lv_obj_align(widget->label, LV_ALIGN_BOTTOM_MID, 0, -60); // 하단 중앙
     lv_label_set_text(widget->label, "-");
     lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
 
