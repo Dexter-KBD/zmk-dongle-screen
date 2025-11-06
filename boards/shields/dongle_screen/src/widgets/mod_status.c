@@ -17,7 +17,6 @@ static lv_color_t mod_color(uint8_t mods) {
     if (mods & (MOD_LGUI | MOD_RGUI)) return lv_color_hex(0x0383E6); // GUI 파랑
     return lv_color_black();
 }
-//////////////////////////
 
 //////////////////////////
 // Caps Word 상태 구조체
@@ -47,7 +46,7 @@ static void caps_word_update_widgets(struct caps_word_state state) {
 static void update_mod_status(struct zmk_widget_mod_status *widget) {
     uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers;
 
-    char text[32] = "";
+    char text[64] = "";
     int idx = 0;
     char *syms[5];
     int n = 0;
@@ -58,6 +57,10 @@ static void update_mod_status(struct zmk_widget_mod_status *widget) {
     if (mods & (MOD_LALT | MOD_RALT)) syms[n++] = "󰘵"; // Alt
     if (mods & (MOD_LGUI | MOD_RGUI)) syms[n++] = "󰌽"; // GUI
 
+    // Caps Word 상태 표시 심볼
+    bool caps_active = mods & MOD_MASK_CAPS; // Zephyr/ZMK에서 Caps Lock 비트
+    if (caps_active) syms[n++] = SF_SYMBOL_CHARACTER_CURSOR_IBEAM; // SF Symbol 예시
+
     // 심볼 합치기
     for (int i = 0; i < n; ++i) {
         if (i > 0) idx += snprintf(&text[idx], sizeof(text) - idx, " ");
@@ -65,13 +68,12 @@ static void update_mod_status(struct zmk_widget_mod_status *widget) {
     }
 
     lv_label_set_text(widget->label, idx ? text : "");
-    lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
+    lv_obj_set_style_text_color(widget->label, mod_color(mods), LV_PART_MAIN);
 
-    // Caps Word 상태 적용
-    struct caps_word_state cw_state = { .active = mods & MOD_CAPS }; // 예: Caps Lock 기반
+    // Caps Word 상태 업데이트
+    struct caps_word_state cw_state = { .active = caps_active };
     caps_word_update_widgets(cw_state);
 }
-//////////////////////////
 
 //////////////////////////
 // 타이머 콜백
@@ -91,7 +93,7 @@ int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *p
     widget->label = lv_label_create(widget->obj);
     lv_obj_align(widget->label, LV_ALIGN_CENTER, 0, 10);
     lv_label_set_text(widget->label, "-"); 
-    lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0); // NerdFont
+    lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
 
     sys_slist_append(&caps_word_widgets, &widget->node);
 
