@@ -18,7 +18,15 @@ struct caps_word_indicator_state {
 };
 
 // -------------------------
-// 모디파이어 색상 결정
+// 모디 위젯 구조체 (Caps Word 포함)
+struct zmk_widget_mod_status {
+    lv_obj_t *obj;              // 전체 컨테이너
+    lv_obj_t *label;            // 모디 상태 레이블
+    lv_obj_t *caps_word_label;  // Caps Word 레이블
+};
+
+// -------------------------
+// 모디 색상 결정
 static lv_color_t mod_color(uint8_t mods) {
     if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);
     if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);
@@ -61,16 +69,16 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
 
 // -------------------------
 // 모디 상태 타이머 콜백
+static struct k_timer mod_status_timer;
+
 static void mod_status_timer_cb(struct k_timer *timer)
 {
     struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
     update_mod_status(widget);
 }
 
-static struct k_timer mod_status_timer;
-
 // -------------------------
-// Caps Word Indicator 업데이트
+// Caps Word 업데이트
 static void caps_word_indicator_set_active(lv_obj_t *label, struct caps_word_indicator_state state) {
     if (state.active) {
         lv_obj_set_style_text_color(label, lv_color_hex(0x00ffe5), LV_PART_MAIN);
@@ -85,10 +93,12 @@ static struct caps_word_indicator_state caps_word_indicator_get_state(const zmk_
     return (struct caps_word_indicator_state){ .active = ev->active };
 }
 
+// 단일 위젯용 전역 포인터
+static struct zmk_widget_mod_status *mod_status_widget_instance = NULL;
+
 static void caps_word_indicator_update_cb(struct caps_word_indicator_state state) {
-    // 여기서는 단일 위젯만 업데이트한다고 가정
-    // 여러 위젯을 관리하려면 리스트를 별도로 구현해야 함
-    // 예시: zmk_widget_caps_word_indicator *widget; widget->obj
+    if (!mod_status_widget_instance) return;
+    caps_word_indicator_set_active(mod_status_widget_instance->caps_word_label, state);
 }
 
 // -------------------------
@@ -105,11 +115,23 @@ int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *p
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 180, 40);
 
+    // 모디 레이블
     widget->label = lv_label_create(widget->obj);
     lv_obj_align(widget->label, LV_ALIGN_CENTER, 0, 10);
     lv_label_set_text(widget->label, "-");
     lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
 
+    // Caps Word 레이블
+    widget->caps_word_label = lv_label_create(widget->obj);
+    lv_label_set_text(widget->caps_word_label, "CW");
+    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, -5, 5);
+    lv_obj_set_style_text_color(widget->caps_word_label, lv_color_hex(0x202020), LV_PART_MAIN);
+    lv_obj_set_style_text_font(widget->caps_word_label, &SF_Compact_Text_Bold_32, LV_PART_MAIN);
+
+    // 전역 포인터 설정
+    mod_status_widget_instance = widget;
+
+    // 모디 상태 타이머
     k_timer_init(&mod_status_timer, mod_status_timer_cb, NULL);
     k_timer_user_data_set(&mod_status_timer, widget);
     k_timer_start(&mod_status_timer, K_MSEC(100), K_MSEC(100));
