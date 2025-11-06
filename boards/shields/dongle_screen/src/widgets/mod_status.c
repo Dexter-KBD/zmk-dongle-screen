@@ -3,7 +3,7 @@
 #include <zmk/hid.h>
 #include <lvgl.h>
 #include "mod_status.h"
-#include "caps_word_indicator.h" // Caps Word 이벤트 처리용
+#include "mod_status.c" // Caps Word 이벤트 처리용
 #include <fonts.h>               // NerdFonts
 #include <sf_symbols.h>          // SF Symbols
 
