@@ -18,13 +18,6 @@ struct caps_word_indicator_state {
 };
 
 // -------------------------
-// 모디 위젯 구조체 (Caps Word 포함)
-struct zmk_widget_mod_status {
-
-    lv_obj_t *caps_word_label;  // Caps Word 레이블
-};
-
-// -------------------------
 // 모디 색상 결정
 static lv_color_t mod_color(uint8_t mods) {
     if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);
