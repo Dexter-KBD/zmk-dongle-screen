@@ -118,7 +118,7 @@ int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *p
     lv_label_set_text(widget->caps_word_label, "CW");
     lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, -5, 5);
     lv_obj_set_style_text_color(widget->caps_word_label, lv_color_hex(0x202020), LV_PART_MAIN);
-    lv_obj_set_style_text_font(widget->caps_word_label, &SF_Compact_Text_Bold_32, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widget->caps_word_label, &NerdFonts_Regular_40., LV_PART_MAIN);
 
     // 전역 포인터 설정
     mod_status_widget_instance = widget;
