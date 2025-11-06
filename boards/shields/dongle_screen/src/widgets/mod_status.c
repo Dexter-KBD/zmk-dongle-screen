@@ -104,18 +104,18 @@ ZMK_SUBSCRIPTION(widget_caps_word_indicator, zmk_caps_word_state_changed);
 int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent)
 {
     widget->obj = lv_obj_create(parent);
-    lv_obj_set_size(widget->obj, 180, 40);
+    lv_obj_set_size(widget->obj, 180, 160); // 전체 위젯 크기 조정
 
-    // 모디 레이블
+    // 모디 레이블 (중앙 하단)
     widget->label = lv_label_create(widget->obj);
-    lv_obj_align(widget->label, LV_ALIGN_CENTER, 0, 10);
+    lv_obj_align(widget->label, LV_ALIGN_BOTTOM_MID, 0, -10); // 하단 중앙, 위로 10픽셀 여유
     lv_label_set_text(widget->label, "-");
     lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
 
-    // Caps Word 레이블 (초기 비활성: 회색)
+    // Caps Word 레이블 (중앙 상단, 초기 비활성: 회색)
     widget->caps_word_label = lv_label_create(widget->obj);
     lv_label_set_text(widget->caps_word_label, "A");  // 심볼이나 글자로 변경 가능
-    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, 0, 10); // 위치
+    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_MID, 0, 10); // 상단 중앙, 아래로 10픽셀 여유
     lv_obj_set_style_text_color(widget->caps_word_label, lv_color_hex(0x202020), LV_PART_MAIN);
     lv_obj_set_style_text_font(widget->caps_word_label, &NerdFonts_Regular_40, LV_PART_MAIN);
 
