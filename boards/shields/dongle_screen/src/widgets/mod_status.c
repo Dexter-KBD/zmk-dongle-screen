@@ -1,4 +1,5 @@
 #include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/logging/log.h>
 #include <zmk/hid.h>
 #include <lvgl.h>
