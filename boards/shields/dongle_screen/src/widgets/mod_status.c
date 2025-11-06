@@ -115,8 +115,8 @@ int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *p
 
     // Caps Word 레이블
     widget->caps_word_label = lv_label_create(widget->obj);
-    lv_label_set_text(widget->caps_word_label, "");
-    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, -5, 5);
+    lv_label_set_text(widget->caps_word_label, "A");
+    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, 0, 0);
     lv_obj_set_style_text_color(widget->caps_word_label, lv_color_hex(0x202020), LV_PART_MAIN);
     lv_obj_set_style_text_font(widget->caps_word_label, &NerdFonts_Regular_40, LV_PART_MAIN);
 
