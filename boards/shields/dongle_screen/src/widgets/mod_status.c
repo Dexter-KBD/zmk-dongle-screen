@@ -18,6 +18,14 @@ struct caps_word_indicator_state {
 };
 
 // -------------------------
+// 모디 + Caps Word 위젯 구조체
+struct zmk_widget_mod_status {
+    lv_obj_t *obj;                 // 전체 컨테이너
+    lv_obj_t *label;               // 모디 레이블
+    lv_obj_t *caps_word_label;     // Caps Word 레이블
+};
+
+// -------------------------
 // 모디 색상 결정
 static lv_color_t mod_color(uint8_t mods) {
     if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);
@@ -62,7 +70,6 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
 // -------------------------
 // 모디 상태 타이머 콜백
 static struct k_timer mod_status_timer;
-
 static void mod_status_timer_cb(struct k_timer *timer)
 {
     struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
@@ -85,7 +92,7 @@ static struct caps_word_indicator_state caps_word_indicator_get_state(const zmk_
     return (struct caps_word_indicator_state){ .active = ev->active };
 }
 
-// 단일 위젯용 전역 포인터
+// 전역 포인터 (단일 위젯용)
 static struct zmk_widget_mod_status *mod_status_widget_instance = NULL;
 
 static void caps_word_indicator_update_cb(struct caps_word_indicator_state state) {
@@ -113,10 +120,10 @@ int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *p
     lv_label_set_text(widget->label, "-");
     lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0);
 
-    // Caps Word 레이블
+    // Caps Word 레이블 (초기 비활성: 회색)
     widget->caps_word_label = lv_label_create(widget->obj);
-    lv_label_set_text(widget->caps_word_label, "A");
-    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, 0, 0);
+    lv_label_set_text(widget->caps_word_label, "A");  // 심볼이나 글자로 변경 가능
+    lv_obj_align(widget->caps_word_label, LV_ALIGN_TOP_RIGHT, 0, 10); // 위치
     lv_obj_set_style_text_color(widget->caps_word_label, lv_color_hex(0x202020), LV_PART_MAIN);
     lv_obj_set_style_text_font(widget->caps_word_label, &NerdFonts_Regular_40, LV_PART_MAIN);
 
