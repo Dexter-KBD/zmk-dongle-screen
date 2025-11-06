@@ -13,7 +13,9 @@
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
+// -------------------------
+// 슬링크드 리스트 초기화
+static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(widgets);
 
 // -------------------------
 // 구조체 정의 (C 파일 내)
@@ -107,7 +109,7 @@ int zmk_widget_caps_word_indicator_init(struct zmk_widget_caps_word_indicator *w
                                         lv_obj_t *parent) {
     widget->obj = lv_label_create(parent);
 
-    // LV_FONT_DECLARE(SF_Compact_Text_Bold_32);
+    // LV_FONT_DECLARE(SF_Compact_Text_Bold_32); // 필요시 활성화
 
     lv_label_set_text(widget->obj, SF_SYMBOL_CHARACTER_CURSOR_IBEAM);
     lv_obj_set_style_text_color(widget->obj, lv_color_hex(0x030303), LV_PART_MAIN);
@@ -116,7 +118,6 @@ int zmk_widget_caps_word_indicator_init(struct zmk_widget_caps_word_indicator *w
 
     sys_slist_append(&widgets, &widget->node);
 
-    widget_caps_word_indicator_init();
     return 0;
 }
 
