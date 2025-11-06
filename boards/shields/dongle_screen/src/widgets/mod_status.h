@@ -1,4 +1,5 @@
 #pragma once
+
 #include <lvgl.h>
 #include <zephyr/kernel.h>
 
