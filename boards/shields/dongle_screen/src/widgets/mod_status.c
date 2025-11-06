@@ -1,75 +1,108 @@
-#include "mod_status.h"
-#include <zmk/display.h>
-#include <zmk/events/keyboard_state_changed.h>
-#include <zmk/event_manager.h>
-
-#include <fonts.h>
-#include <sf_symbols.h>
-
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zmk/hid.h>
+#include <lvgl.h>
+#include "mod_status.h"
+#include <fonts.h> // LV_FONT_DECLARE용 포함
+
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
-
-// ====== 상태 업데이트 ======
-struct mod_status_state {
-    bool caps_active;
-    bool shift_active;
-    bool ctrl_active;
-};
-
-static void mod_status_set_label_color(lv_obj_t *label, bool active) {
-    lv_color_t color = active ? lv_color_hex(0x00ffe5) : lv_color_hex(0x202020);
-    lv_obj_set_style_text_color(label, color, LV_PART_MAIN);
+//////////////////////////
+// 모디파이어별 색상 결정 함수
+// 각 키보드 모디 상태에 따라 텍스트 색상을 반환
+static lv_color_t mod_color(uint8_t mods) {
+    if (mods & (MOD_LCTL | MOD_RCTL)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LSFT | MOD_RSFT)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LALT | MOD_RALT)) return lv_color_hex(0xA8E6CF);  // 민트
+    if (mods & (MOD_LGUI | MOD_RGUI)) return lv_color_hex(0x0383E6);  // 윈도우 색
+    return lv_color_black(); // 기본 색상
 }
+//////////////////////////
 
-static void mod_status_update_widgets(struct mod_status_state state) {
-    struct zmk_widget_mod_status *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
-        mod_status_set_label_color(widget->caps_label, state.caps_active);
-        mod_status_set_label_color(widget->mod_label, state.shift_active || state.ctrl_active);
+//////////////////////////
+// 모디 상태 업데이트 함수
+// 키보드 HID 레포트를 읽어 현재 모디 상태를 심볼과 색상으로 갱신
+static void update_mod_status(struct zmk_widget_mod_status *widget)
+{
+    uint8_t mods = zmk_hid_get_keyboard_report()->body.modifiers; // 현재 모디 상태 읽기
+    char text[32] = ""; // 출력 문자열 버퍼
+    int idx = 0;
+
+    // 심볼 임시 배열
+    char *syms[4];
+    int n = 0;
+
+    // 모디 상태별 심볼 지정
+    if (mods & (MOD_LCTL | MOD_RCTL))
+        syms[n++] = "󰘴"; // Control
+    if (mods & (MOD_LSFT | MOD_RSFT))
+        syms[n++] = "󰘶"; // Shift
+    if (mods & (MOD_LALT | MOD_RALT))
+        syms[n++] = "󰘵"; // Alt
+    if (mods & (MOD_LGUI | MOD_RGUI))
+    // 시스템 아이콘 설정에 따른 심볼
+#if CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 1
+        syms[n++] = "󰌽"; // 시스템 1
+#elif CONFIG_DONGLE_SCREEN_SYSTEM_ICON == 2
+        syms[n++] = ""; // 시스템 2
+#else
+        syms[n++] = "󰘳"; // 기본 시스템
+#endif
+
+    // 심볼들을 공백으로 구분하여 text 배열에 복사
+    for (int i = 0; i < n; ++i) {
+        if (i > 0)
+            idx += snprintf(&text[idx], sizeof(text) - idx, " ");
+        idx += snprintf(&text[idx], sizeof(text) - idx, "%s", syms[i]);
     }
+
+    // LVGL 라벨에 텍스트 적용
+    lv_label_set_text(widget->label, idx ? text : "");
+    // LVGL 라벨에 색상 적용
+    lv_obj_set_style_text_color(widget->label, mod_color(mods), 0);
 }
+//////////////////////////
 
-// ====== 이벤트 변환 ======
-static struct mod_status_state mod_status_get_state(const zmk_event_t *eh) {
-    const struct zmk_keyboard_state_changed *ev = as_zmk_keyboard_state_changed(eh);
-    return (struct mod_status_state){
-        .caps_active = ev->mods & MOD_MASK_CAPS,
-        .shift_active = ev->mods & (MOD_MASK_SHIFT_L | MOD_MASK_SHIFT_R),
-        .ctrl_active = ev->mods & (MOD_MASK_CTRL_L | MOD_MASK_CTRL_R),
-    };
+//////////////////////////
+// 모디 상태 타이머 콜백
+// 주기적으로 update_mod_status 호출
+static void mod_status_timer_cb(struct k_timer *timer)
+{
+    struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
+    update_mod_status(widget);
 }
+//////////////////////////
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_mod_status, struct mod_status_state,
-                            mod_status_update_widgets, mod_status_get_state)
-ZMK_SUBSCRIPTION(widget_mod_status, zmk_keyboard_state_changed);
+static struct k_timer mod_status_timer;
 
-// ====== 초기화 ======
-int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent) {
-    widget->mod_label = lv_label_create(parent);
-    lv_label_set_text(widget->mod_label, SF_SYMBOL_ARROW_UP); // Shift/Control 대표 심볼
-    lv_obj_set_style_text_color(widget->mod_label, lv_color_hex(0x202020), LV_PART_MAIN);
-    lv_obj_set_style_text_font(widget->mod_label, &SF_Compact_Text_Bold_32, LV_PART_MAIN);
-    lv_obj_set_style_text_align(widget->mod_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_align(widget->mod_label, LV_ALIGN_CENTER, -20, 0); // 위치 예시
+//////////////////////////
+// 모디 상태 위젯 초기화
+// parent 객체에 LVGL 객체 생성 후 타이머 시작
+int zmk_widget_mod_status_init(struct zmk_widget_mod_status *widget, lv_obj_t *parent)
+{
+    // LVGL 컨테이너 객체 생성
+    widget->obj = lv_obj_create(parent);
+    lv_obj_set_size(widget->obj, 180, 40);
 
-    widget->caps_label = lv_label_create(parent);
-    lv_label_set_text(widget->caps_label, SF_SYMBOL_CHARACTER_CURSOR_IBEAM);
-    lv_obj_set_style_text_color(widget->caps_label, lv_color_hex(0x202020), LV_PART_MAIN);
-    lv_obj_set_style_text_font(widget->caps_label, &SF_Compact_Text_Bold_32, LV_PART_MAIN);
-    lv_obj_set_style_text_align(widget->caps_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-    lv_obj_align(widget->caps_label, LV_ALIGN_CENTER, 20, 0); // 위치 예시
+    // LVGL 라벨 객체 생성
+    widget->label = lv_label_create(widget->obj);
+    lv_obj_align(widget->label, LV_ALIGN_CENTER, 0, 10);
+    lv_label_set_text(widget->label, "-"); // 초기 텍스트
+    lv_obj_set_style_text_font(widget->label, &NerdFonts_Regular_40, 0); // NerdFont 설정
 
-    sys_slist_append(&widgets, &widget->node);
-
-    // 초기 업데이트
-    struct mod_status_state initial = {0};
-    mod_status_update_widgets(initial);
+    // 타이머 초기화 및 주기적 업데이트
+    k_timer_init(&mod_status_timer, mod_status_timer_cb, NULL);
+    k_timer_user_data_set(&mod_status_timer, widget);
+    k_timer_start(&mod_status_timer, K_MSEC(100), K_MSEC(100));
 
     return 0;
 }
+//////////////////////////
 
-lv_obj_t *zmk_widget_mod_status_obj(struct zmk_widget_mod_status *widget) {
-    return widget->mod_label; // 대표 객체 반환
+//////////////////////////
+// LVGL 객체 반환 함수
+lv_obj_t *zmk_widget_mod_status_obj(struct zmk_widget_mod_status *widget)
+{
+    return widget->obj;
 }
+//////////////////////////
