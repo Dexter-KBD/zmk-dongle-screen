@@ -20,8 +20,7 @@ struct caps_word_indicator_state {
 // -------------------------
 // 모디 위젯 구조체 (Caps Word 포함)
 struct zmk_widget_mod_status {
-    lv_obj_t *obj;              // 전체 컨테이너
-    lv_obj_t *label;            // 모디 상태 레이블
+
     lv_obj_t *caps_word_label;  // Caps Word 레이블
 };
 
