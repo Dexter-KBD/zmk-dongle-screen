@@ -176,6 +176,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 	if (vtile_buf == NULL) {
 		lv_free(buf0);
 		lv_free(buf1);
+		LOG_ERR("Failed to allocate memory for vtile buffer");
 		return -ENOMEM;
 	}
 	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
