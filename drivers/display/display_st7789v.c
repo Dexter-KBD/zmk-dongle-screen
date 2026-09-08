@@ -19,11 +19,53 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/atomic.h>
+#include <errno.h>
 #include <zephyr/drivers/display.h>
 
-#define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
+#define LOG_LEVEL CONFIG_ZMK_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_st7789v);
+
+static atomic_t yads_spi_large_started;
+static atomic_t yads_spi_large_completed;
+static atomic_t yads_spi_large_length;
+static atomic_t yads_spi_large_result;
+static atomic_t yads_spi_errors;
+static atomic_t yads_spi_error_length;
+static atomic_t yads_spi_error_result;
+
+/* Called by periodic render diagnostics work; individual fields are atomic. */
+void yads_spi_diagnostic_report(void);
+
+void yads_spi_diagnostic_report(void)
+{
+	LOG_INF("SPI large BEGIN=%u COMPLETE=%u last_bytes=%u last_ret=%d (pending=%d)",
+		(unsigned int)atomic_get(&yads_spi_large_started),
+		(unsigned int)atomic_get(&yads_spi_large_completed),
+		(unsigned int)atomic_get(&yads_spi_large_length),
+		(int)atomic_get(&yads_spi_large_result), -EINPROGRESS);
+	LOG_INF("SPI errors total=%u last_bytes=%u last_ret=%d",
+		(unsigned int)atomic_get(&yads_spi_errors),
+		(unsigned int)atomic_get(&yads_spi_error_length),
+		(int)atomic_get(&yads_spi_error_result));
+}
+
+static void yads_spi_record_result(int ret, size_t len)
+{
+	if (len >= 1024U) {
+		atomic_set(&yads_spi_large_result, ret);
+		atomic_inc(&yads_spi_large_completed);
+	}
+
+	if (ret != 0) {
+		atomic_set(&yads_spi_error_length, (atomic_val_t)len);
+		atomic_set(&yads_spi_error_result, ret);
+		if ((unsigned int)atomic_inc(&yads_spi_errors) < 8U) {
+			LOG_ERR("SPI write failed: ret=%d bytes=%zu (first 8 errors only)", ret, len);
+		}
+	}
+}
 
 struct st7789v_config {
 	struct spi_dt_spec bus;
@@ -74,6 +116,7 @@ static void st7789v_transmit(const struct device *dev, uint8_t cmd, uint8_t *tx_
 {
 	const struct st7789v_config *config = dev->config;
 	uint16_t data = cmd;
+	int ret;
 
 	struct spi_buf tx_buf = {.buf = &cmd, .len = 1};
 	struct spi_buf_set tx_bufs = {.buffers = &tx_buf, .count = 1};
@@ -81,27 +124,46 @@ static void st7789v_transmit(const struct device *dev, uint8_t cmd, uint8_t *tx_
 	if (config->cmd_data_gpio.port != NULL) {
 		if (cmd != ST7789V_CMD_NONE) {
 			gpio_pin_set_dt(&config->cmd_data_gpio, 1);
-			spi_write_dt(&config->bus, &tx_bufs);
+			ret = spi_write_dt(&config->bus, &tx_bufs);
+			yads_spi_record_result(ret, tx_buf.len);
 		}
 
 		if (tx_data != NULL) {
+			bool trace_large = false;
+
 			tx_buf.buf = tx_data;
 			tx_buf.len = tx_count;
 			gpio_pin_set_dt(&config->cmd_data_gpio, 0);
-			spi_write_dt(&config->bus, &tx_bufs);
+			if (tx_buf.len >= 1024U) {
+				/* Persist entry before SPI so a non-returning write remains visible. */
+				atomic_set(&yads_spi_large_length, (atomic_val_t)tx_buf.len);
+				atomic_set(&yads_spi_large_result, -EINPROGRESS);
+				trace_large = atomic_inc(&yads_spi_large_started) == 0;
+			}
+			if (trace_large) {
+				LOG_INF("First large SPI data transfer begin: bytes=%zu", tx_buf.len);
+			}
+			ret = spi_write_dt(&config->bus, &tx_bufs);
+			yads_spi_record_result(ret, tx_buf.len);
+			if (trace_large) {
+				LOG_INF("First large SPI data transfer complete: ret=%d bytes=%zu",
+					ret, tx_buf.len);
+			}
 		}
 	} else {
 		tx_buf.buf = &data;
 		tx_buf.len = 2;
 
 		if (cmd != ST7789V_CMD_NONE) {
-			spi_write_dt(&config->bus, &tx_bufs);
+			ret = spi_write_dt(&config->bus, &tx_bufs);
+			yads_spi_record_result(ret, tx_buf.len);
 		}
 
 		if (tx_data != NULL) {
 			for (size_t index = 0; index < tx_count; ++index) {
 				data = 0x0100 | tx_data[index];
-				spi_write_dt(&config->bus, &tx_bufs);
+				ret = spi_write_dt(&config->bus, &tx_bufs);
+				yads_spi_record_result(ret, tx_buf.len);
 			}
 		}
 	}
