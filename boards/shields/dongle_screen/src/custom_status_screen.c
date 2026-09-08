@@ -6,7 +6,6 @@
 
 #include "custom_status_screen.h"
 
-extern void yads_diagnostic_mark(uint16_t color);
 
 #if CONFIG_DONGLE_SCREEN_OUTPUT_ACTIVE
 #include "widgets/output_status.h"
@@ -18,23 +17,37 @@ static struct zmk_widget_output_status output_status_widget;
 static struct zmk_widget_layer_status layer_status_widget;
 #endif
 
+#if CONFIG_DONGLE_SCREEN_BATTERY_ACTIVE
+#include "widgets/battery_status.h"
+static struct zmk_widget_dongle_battery_status dongle_battery_status_widget;
+#endif
+
 #if CONFIG_DONGLE_SCREEN_WPM_ACTIVE
 #include "widgets/wpm_status.h"
 static struct zmk_widget_wpm_status wpm_status_widget;
 #endif
 
+#if CONFIG_DONGLE_SCREEN_MODIFIER_ACTIVE
+#include "widgets/mod_status.h"
+static struct zmk_widget_mod_status mod_widget;
+#endif
+
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
+
 lv_style_t global_style;
 
-/* 임시 분리 진단: 배터리와 보조키 위젯은 아직 생성하지 않는다. */
 lv_obj_t *zmk_display_status_screen()
 {
-    yads_diagnostic_mark(0x8410); /* gray: screen construction entered */
+    lv_obj_t *screen;
 
-    lv_obj_t *screen = lv_obj_create(NULL);
+    screen = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x000000), LV_PART_MAIN);
     lv_obj_set_style_bg_opa(screen, 255, LV_PART_MAIN);
 
     lv_style_init(&global_style);
+    // lv_style_set_text_font(&global_style, &lv_font_unscii_8); // ToDo: Font is not recognized
     lv_style_set_text_color(&global_style, lv_color_white());
     lv_style_set_text_letter_space(&global_style, 1);
     lv_style_set_text_line_space(&global_style, 1);
@@ -43,6 +56,11 @@ lv_obj_t *zmk_display_status_screen()
 #if CONFIG_DONGLE_SCREEN_OUTPUT_ACTIVE
     zmk_widget_output_status_init(&output_status_widget, screen);
     lv_obj_align(zmk_widget_output_status_obj(&output_status_widget), LV_ALIGN_TOP_MID, 20, 10);
+#endif
+
+#if CONFIG_DONGLE_SCREEN_BATTERY_ACTIVE
+    zmk_widget_dongle_battery_status_init(&dongle_battery_status_widget, screen);
+    lv_obj_align(zmk_widget_dongle_battery_status_obj(&dongle_battery_status_widget), LV_ALIGN_BOTTOM_MID, 0, 0);
 #endif
 
 #if CONFIG_DONGLE_SCREEN_WPM_ACTIVE
@@ -55,6 +73,10 @@ lv_obj_t *zmk_display_status_screen()
     lv_obj_align(zmk_widget_layer_status_obj(&layer_status_widget), LV_ALIGN_CENTER, 0, 0);
 #endif
 
-    yads_diagnostic_mark(0x07e0); /* green: first widget group constructed */
+#if CONFIG_DONGLE_SCREEN_MODIFIER_ACTIVE
+    zmk_widget_mod_status_init(&mod_widget, screen);
+    lv_obj_align(zmk_widget_mod_status_obj(&mod_widget), LV_ALIGN_CENTER, 0, 0);
+#endif
+
     return screen;
 }

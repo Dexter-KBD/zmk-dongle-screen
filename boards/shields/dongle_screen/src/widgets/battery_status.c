@@ -226,7 +226,7 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
         // 🖼 배터리 캔버스 생성
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
         lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT,
-                             LV_COLOR_FORMAT_NATIVE);
+                             LV_COLOR_FORMAT_RGB565);
 
         // 🩶 회색빛 그림자 레이블 (먼저 생성 → 뒤쪽)
         lv_obj_t *battery_label_shadow = lv_label_create(image_canvas);

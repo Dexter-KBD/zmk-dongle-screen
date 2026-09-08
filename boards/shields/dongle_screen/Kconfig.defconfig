@@ -25,20 +25,21 @@ choice ZMK_DISPLAY_WORK_QUEUE
     default ZMK_DISPLAY_WORK_QUEUE_DEDICATED
 endchoice
 
-config ZMK_DISPLAY_DEDICATED_THREAD_STACK_SIZE
-    default 4096
-
-# The shield keeps the original SPI driver instead of Zephyr 4.1's
-# MIPI-DBI ST7789V driver, so its pixel-format setting is local to the shield.
-config DONGLE_SCREEN_ST7789V_RGB565
-    bool
-    default y
+choice ST7789V_PIXEL_FORMAT
+    default ST7789V_RGB565
+endchoice
 
 config LV_Z_VDB_SIZE
-    default 100
+    default 50
+
+config LV_Z_DOUBLE_VDB
+    default y
+
+config LV_Z_FLUSH_THREAD
+    default y
 
 config LV_Z_MEM_POOL_SIZE
-    default 10000
+    default 16384
 
 config LV_DPI_DEF
     default 261
