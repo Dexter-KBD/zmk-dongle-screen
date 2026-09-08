@@ -9,10 +9,9 @@ endchoice
 
 config ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
     select LV_USE_LABEL
-    select LV_USE_IMG
+    select LV_USE_IMAGE
     select LV_USE_CANVAS
     select LV_USE_ANIMIMG 
-    select LV_USE_ANIMATION
     select LV_USE_LINE 
     select LV_FONT_UNSCII_8
     select ZMK_WPM
@@ -29,9 +28,11 @@ endchoice
 config ZMK_DISPLAY_DEDICATED_THREAD_STACK_SIZE
     default 4096
 
-choice ST7789V_PIXEL_FORMAT
-	default ST7789V_RGB565
-endchoice
+# The shield keeps the original SPI driver instead of Zephyr 4.1's
+# MIPI-DBI ST7789V driver, so its pixel-format setting is local to the shield.
+config DONGLE_SCREEN_ST7789V_RGB565
+    bool
+    default y
 
 config LV_Z_VDB_SIZE
     default 100
@@ -49,10 +50,14 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
 endchoice
 
+# LVGL 9.3 no longer declares this as an LVGL Kconfig entry, but Zephyr's
+# LVGL bridge still maps CONFIG_LV_COLOR_16_SWAP to LV_COLOR_16_SWAP, and
+# LVGL 9.3 retains that v8 compatibility path for RGB565 flushes.
 config LV_COLOR_16_SWAP
+	bool
 	default y
 
-config LV_DISP_DEF_REFR_PERIOD
+config LV_DEF_REFR_PERIOD
     default 20
 
 choice LV_FONT_DEFAULT

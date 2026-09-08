@@ -54,7 +54,8 @@ struct battery_object {
 };
 
 static struct battery_object battery_objects[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
-static lv_color_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET][CANVAS_WIDTH * CANVAS_HEIGHT];
+static lv_color16_t battery_image_buffer[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET]
+                                     [CANVAS_WIDTH * CANVAS_HEIGHT];
 static int8_t last_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT + SOURCE_OFFSET];
 
 // ⚠️ 초기화: 모든 배터리 레벨을 -1로 초기화
@@ -81,53 +82,58 @@ static lv_color_t battery_color_dark(uint8_t level) {
     return lv_color_hex(0x04910A);
 }
 
+// LVGL 9 draws directly through a canvas layer; the old lv_canvas_draw_rect()
+// helper was removed during the LVGL 8 to 9 API migration.
+static void draw_battery_rect(lv_layer_t *layer, int32_t x, int32_t y, int32_t width,
+                              int32_t height, int32_t radius, lv_color_t color) {
+    lv_draw_rect_dsc_t rect_dsc;
+    lv_area_t area = {x, y, x + width - 1, y + height - 1};
+
+    lv_draw_rect_dsc_init(&rect_dsc);
+    rect_dsc.bg_color = color;
+    rect_dsc.bg_opa = LV_OPA_COVER;
+    rect_dsc.radius = radius;
+    lv_draw_rect(layer, &rect_dsc, &area);
+}
+
 // 🔹 배터리 캔버스 그리기
 static void draw_battery(lv_obj_t *canvas, uint8_t level) {
     lv_canvas_fill_bg(canvas, lv_color_black(), LV_OPA_TRANSP);
-    lv_draw_rect_dsc_t rect_dsc;
+
+    lv_layer_t layer;
+    lv_canvas_init_layer(canvas, &layer);
 
     // ✅ 외곽 흰색 테두리
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
-    rect_dsc.bg_opa = LV_OPA_COVER;
-    rect_dsc.radius = 7;
-    lv_canvas_draw_rect(canvas, 8, 0, 102, 32, &rect_dsc);
+    draw_battery_rect(&layer, 8, 0, 102, 32, 7, lv_color_hex(0xFFFFFF));
 
     // ⚡ +극 돌출부
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0xFFFFFF);
-    rect_dsc.bg_opa = LV_OPA_COVER;
-    lv_canvas_draw_rect(canvas, 113, 10, 3, 12, &rect_dsc);
+    draw_battery_rect(&layer, 113, 10, 3, 12, 0, lv_color_hex(0xFFFFFF));
+
+    lv_canvas_finish_layer(canvas, &layer);
 
     // 🖤 오른쪽 둥근 모서리
     lv_color_t black = lv_color_hex(0x000000);
-    lv_canvas_set_px(canvas, 115, 10, black);
-    lv_canvas_set_px(canvas, 115, 21, black);
-    
+    lv_canvas_set_px(canvas, 115, 10, black, LV_OPA_COVER);
+    lv_canvas_set_px(canvas, 115, 21, black, LV_OPA_COVER);
+
+    lv_canvas_init_layer(canvas, &layer);
+
     // ⚫ 내부 검정 공백
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = lv_color_hex(0x000000);
-    rect_dsc.bg_opa = LV_OPA_COVER;
-    rect_dsc.radius = 6;
-    lv_canvas_draw_rect(canvas, 10, 2, 98, 28, &rect_dsc);
+    draw_battery_rect(&layer, 10, 2, 98, 28, 6, lv_color_hex(0x000000));
 
     // 🔹 어두운 배경
-    lv_draw_rect_dsc_init(&rect_dsc);
-    rect_dsc.bg_color = battery_color_dark(level);
-    rect_dsc.bg_opa = LV_OPA_COVER;
-    rect_dsc.radius = 3;
-    lv_canvas_draw_rect(canvas, 14, 6, BATTERY_WIDTH, BATTERY_HEIGHT, &rect_dsc);
+    draw_battery_rect(&layer, 14, 6, BATTERY_WIDTH, BATTERY_HEIGHT, 3,
+                      battery_color_dark(level));
 
     // 🔆 밝은 채움
     if (level > 0) {
         uint8_t width = (level > 100 ? 100 : level);
         uint8_t pixel_width = (uint8_t)((BATTERY_WIDTH * width) / 100);
-        lv_draw_rect_dsc_init(&rect_dsc);
-        rect_dsc.bg_color = battery_color(level);
-        rect_dsc.bg_opa = LV_OPA_COVER;
-        rect_dsc.radius = 3;
-        lv_canvas_draw_rect(canvas, 14, 6, pixel_width, BATTERY_HEIGHT, &rect_dsc);
+        draw_battery_rect(&layer, 14, 6, pixel_width, BATTERY_HEIGHT, 3,
+                          battery_color(level));
     }
+
+    lv_canvas_finish_layer(canvas, &layer);
 }
 
 // 🔹 배터리 심볼 + 레이블 + 그림자 업데이트
@@ -219,7 +225,8 @@ int zmk_widget_dongle_battery_status_init(struct zmk_widget_dongle_battery_statu
     for (int i = 0; i < canvas_count; i++) {
         // 🖼 배터리 캔버스 생성
         lv_obj_t *image_canvas = lv_canvas_create(widget->obj);
-        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
+        lv_canvas_set_buffer(image_canvas, battery_image_buffer[i], CANVAS_WIDTH, CANVAS_HEIGHT,
+                             LV_COLOR_FORMAT_NATIVE);
 
         // 🩶 회색빛 그림자 레이블 (먼저 생성 → 뒤쪽)
         lv_obj_t *battery_label_shadow = lv_label_create(image_canvas);

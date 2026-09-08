@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT sitronix_st7789v
+#define DT_DRV_COMPAT zmk_dongle_screen_st7789v
 
 #include "display_st7789v.h"
 
@@ -55,7 +55,7 @@ struct st7789v_data {
 	enum display_orientation orientation;
 };
 
-#ifdef CONFIG_ST7789V_RGB565
+#ifdef CONFIG_DONGLE_SCREEN_ST7789V_RGB565
 #define ST7789V_PIXEL_SIZE 2u
 #else
 #define ST7789V_PIXEL_SIZE 3u
@@ -202,7 +202,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 
-#ifdef CONFIG_ST7789V_RGB565
+#ifdef CONFIG_DONGLE_SCREEN_ST7789V_RGB565
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 #else
@@ -215,7 +215,7 @@ static void st7789v_get_capabilities(const struct device *dev,
 static int st7789v_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pixel_format)
 {
-#ifdef CONFIG_ST7789V_RGB565
+#ifdef CONFIG_DONGLE_SCREEN_ST7789V_RGB565
 	if (pixel_format == PIXEL_FORMAT_RGB_565) {
 #else
 	if (pixel_format == PIXEL_FORMAT_RGB_888) {

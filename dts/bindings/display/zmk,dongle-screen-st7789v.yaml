@@ -1,0 +1,103 @@
+# Copyright (c) 2026 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+
+description: SPI ST7789V display controller used by the YADS dongle screen
+
+compatible: "zmk,dongle-screen-st7789v"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET pin. The ST7789V reset input is active low.
+
+  cmd-data-gpios:
+    type: phandle-array
+    description: |
+      D/CX pin. If configured, the driver uses a 4-wire SPI transfer;
+      otherwise it uses 9-bit 3-wire SPI transfers.
+
+  x-offset:
+    type: int
+    required: true
+    description: Column offset in pixels from the LCD to controller memory.
+
+  y-offset:
+    type: int
+    required: true
+    description: Row offset in pixels from the LCD to controller memory.
+
+  vcom:
+    type: int
+    required: true
+    description: VCOM setting.
+
+  gctrl:
+    type: int
+    required: true
+    description: Gate control setting.
+
+  vrhs:
+    type: int
+    description: VRH setting.
+
+  vdvs:
+    type: int
+    description: VDV setting.
+
+  mdac:
+    type: int
+    required: true
+    description: Memory data access control setting.
+
+  lcm:
+    type: int
+    required: true
+    description: LCM setting.
+
+  colmod:
+    type: int
+    required: true
+    description: Interface pixel format setting.
+
+  gamma:
+    type: int
+    required: true
+    description: Gamma setting.
+
+  porch-param:
+    type: uint8-array
+    required: true
+    description: Porch setting.
+
+  cmd2en-param:
+    type: uint8-array
+    required: true
+    description: Command 2 enable parameter.
+
+  pwctrl1-param:
+    type: uint8-array
+    required: true
+    description: Power control 1 parameter.
+
+  pvgam-param:
+    type: uint8-array
+    required: true
+    description: Positive voltage gamma control parameter.
+
+  nvgam-param:
+    type: uint8-array
+    required: true
+    description: Negative voltage gamma control parameter.
+
+  ram-param:
+    type: uint8-array
+    required: true
+    description: RAM control parameter.
+
+  rgb-param:
+    type: uint8-array
+    required: true
+    description: RGB interface control parameter.
