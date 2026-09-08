@@ -21,6 +21,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
+extern void yads_diagnostic_mark(uint16_t color);
+
 static lv_display_t *display;
 struct lvgl_disp_data disp_data = {
 	.blanking_on = false,
@@ -236,7 +238,9 @@ int lvgl_init(void)
 	lv_log_register_print_cb(lvgl_log);
 #endif
 
+	yads_diagnostic_mark(0xffe0); /* yellow: entering LVGL core initialization */
 	lv_init();
+	yads_diagnostic_mark(0xf81f); /* magenta: LVGL core initialized */
 	lv_tick_set_cb(k_uptime_get_32);
 
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
@@ -250,6 +254,7 @@ int lvgl_init(void)
 	if (!display) {
 		return -ENOMEM;
 	}
+	yads_diagnostic_mark(0x07ff); /* cyan: LVGL display created */
 	lv_display_set_user_data(display, &disp_data);
 
 	/* Match LVGL's logical dimensions to the panel's existing hardware rotation. */
@@ -289,6 +294,7 @@ int lvgl_init(void)
 		return err;
 	}
 
+	yads_diagnostic_mark(0xffff); /* white: LVGL bridge initialization complete */
 	return 0;
 }
 
