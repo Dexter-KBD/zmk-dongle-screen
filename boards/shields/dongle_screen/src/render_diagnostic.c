@@ -1,4 +1,4 @@
-/* Temporary read-only render instrumentation. No additional display writes. */
+/* Temporary render diagnostics with one-time direct color checkpoints. */
 #include <stddef.h>
 #include <stdint.h>
 #include <lvgl.h>
@@ -16,6 +16,7 @@ static atomic_t flush_begin, flush_done;
 static atomic_t alloc_failures, failed_alloc_size;
 
 extern void yads_spi_diagnostic_report(void);
+extern void yads_diagnostic_mark(uint16_t color);
 extern void __real_lv_screen_load(lv_obj_t *screen);
 extern uint32_t __real_lv_timer_handler(void);
 extern void __real_lvgl_flush_display(struct lvgl_display_flush *request);
@@ -24,10 +25,16 @@ extern void *__real_lvgl_realloc(void *ptr, size_t size);
 
 void __wrap_lv_screen_load(lv_obj_t *screen)
 {
-    atomic_inc(&load_begin);
+    atomic_val_t n = atomic_inc(&load_begin);
     LOG_INF("YADS screen load begin");
+    if (n == 0) {
+        yads_diagnostic_mark(0xfd20); /* orange: entering screen load */
+    }
     __real_lv_screen_load(screen);
     atomic_inc(&load_done);
+    if (n == 0) {
+        yads_diagnostic_mark(0xf81f); /* magenta: screen load returned */
+    }
     LOG_INF("YADS screen load returned");
 }
 
@@ -36,6 +43,9 @@ uint32_t __wrap_lv_timer_handler(void)
     atomic_val_t n = atomic_inc(&tick_begin);
     if (n < 2) {
         LOG_INF("YADS timer handler begin %d", (int)n + 1);
+    }
+    if (n == 0) {
+        yads_diagnostic_mark(0xf800); /* red: entering first render handler */
     }
     uint32_t next = __real_lv_timer_handler();
     atomic_inc(&tick_done);
@@ -53,6 +63,10 @@ void __wrap_lvgl_flush_display(struct lvgl_display_flush *request)
                 (int)n + 1, (unsigned int)request->x, (unsigned int)request->y,
                 (unsigned int)request->desc.width, (unsigned int)request->desc.height,
                 (unsigned int)request->desc.buf_size);
+    }
+    if (n == 0) {
+        /* Before the real flush acquires SPI; never called from the SPI driver. */
+        yads_diagnostic_mark(0x07ff); /* cyan: entering first display transfer */
     }
     __real_lvgl_flush_display(request);
     atomic_inc(&flush_done);
