@@ -176,7 +176,6 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 	if (vtile_buf == NULL) {
 		lv_free(buf0);
 		lv_free(buf1);
-		LOG_ERR("Failed to allocate memory for vtile buffer");
 		return -ENOMEM;
 	}
 	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
@@ -251,6 +250,23 @@ int lvgl_init(void)
 		return -ENOMEM;
 	}
 	lv_display_set_user_data(display, &disp_data);
+
+	/* Match LVGL's logical dimensions to the panel's existing hardware rotation. */
+	switch (disp_data.cap.current_orientation) {
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		lv_display_set_rotation(display, LV_DISPLAY_ROTATION_90);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		lv_display_set_rotation(display, LV_DISPLAY_ROTATION_180);
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		lv_display_set_rotation(display, LV_DISPLAY_ROTATION_270);
+		break;
+	case DISPLAY_ORIENTATION_NORMAL:
+	default:
+		lv_display_set_rotation(display, LV_DISPLAY_ROTATION_0);
+		break;
+	}
 
 	if (set_lvgl_rendering_cb(display) != 0) {
 		LOG_ERR("Display not supported.");
