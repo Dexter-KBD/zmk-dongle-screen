@@ -60,12 +60,23 @@ static void update_mod_status(struct zmk_widget_mod_status *widget)
 }
 
 // -------------------------
-// 모디 상태 타이머 콜백
+// 모디 상태 갱신은 LVGL 렌더링과 같은 화면 작업 큐에서 실행
 static struct k_timer mod_status_timer;
+static void mod_status_work_cb(struct k_work *work)
+{
+    ARG_UNUSED(work);
+    struct zmk_widget_mod_status *widget = k_timer_user_data_get(&mod_status_timer);
+    if (widget != NULL) {
+        update_mod_status(widget);
+    }
+}
+K_WORK_DEFINE(mod_status_work, mod_status_work_cb);
+
 static void mod_status_timer_cb(struct k_timer *timer)
 {
-    struct zmk_widget_mod_status *widget = k_timer_user_data_get(timer);
-    update_mod_status(widget);
+    ARG_UNUSED(timer);
+    /* 타이머 인터럽트에서는 LVGL을 호출하지 않고 작업만 제출한다. */
+    k_work_submit_to_queue(zmk_display_work_q(), &mod_status_work);
 }
 
 // -------------------------
