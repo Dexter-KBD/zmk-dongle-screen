@@ -6,6 +6,7 @@
 
 #include "custom_status_screen.h"
 
+extern void yads_diagnostic_mark(uint16_t color);
 
 #if CONFIG_DONGLE_SCREEN_OUTPUT_ACTIVE
 #include "widgets/output_status.h"
@@ -41,6 +42,7 @@ lv_style_t global_style;
 lv_obj_t *zmk_display_status_screen()
 {
     lv_obj_t *screen;
+    yads_diagnostic_mark(0x8410); /* gray: custom screen construction entered */
 
     screen = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen, lv_color_hex(0x000000), LV_PART_MAIN);
@@ -78,5 +80,6 @@ lv_obj_t *zmk_display_status_screen()
     lv_obj_align(zmk_widget_mod_status_obj(&mod_widget), LV_ALIGN_CENTER, 0, 0);
 #endif
 
+    yads_diagnostic_mark(0x07e0); /* green: all custom widgets constructed */
     return screen;
 }
