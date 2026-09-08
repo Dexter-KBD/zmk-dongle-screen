@@ -14,7 +14,7 @@ if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library_sources(src/display_diagnostic.c)
   if(CONFIG_ZMK_USB_LOGGING)
     zephyr_library_sources(src/render_diagnostic.c)
-    zephyr_link_options(
+    zephyr_ld_options(
       -Wl,--wrap=lv_screen_load
       -Wl,--wrap=lv_timer_handler
       -Wl,--wrap=lvgl_flush_display
