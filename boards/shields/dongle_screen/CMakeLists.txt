@@ -12,6 +12,15 @@ if(CONFIG_SHIELD_DONGLE_SCREEN)
   zephyr_library_sources(src/custom_status_screen.c)
   zephyr_library_sources(src/screen_rotate_init.c)
   zephyr_library_sources(src/display_diagnostic.c)
+  if(CONFIG_ZMK_USB_LOGGING)
+    zephyr_library_sources(src/render_diagnostic.c)
+    zephyr_link_options(
+      -Wl,--wrap=lv_screen_load
+      -Wl,--wrap=lv_timer_handler
+      -Wl,--wrap=lvgl_flush_display
+      -Wl,--wrap=lvgl_malloc
+      -Wl,--wrap=lvgl_realloc)
+  endif()
   zephyr_library_sources(src/widgets/output_status.c)
   zephyr_library_sources(src/widgets/battery_status.c)
   zephyr_library_sources(src/widgets/layer_status.c)
